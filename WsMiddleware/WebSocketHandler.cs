@@ -22,19 +22,32 @@ namespace my_hero.ws
 
             while (connection.WebSocket.State == WebSocketState.Open)
             {
-                var result = await connection.WebSocket.ReceiveAsync(
-                    buffer: new ArraySegment<byte>(buffer),
-                    cancellationToken: CancellationToken.None);
-
-                if (result.MessageType == WebSocketMessageType.Text)
+                try
                 {
-                    var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                    var result = await connection.WebSocket.ReceiveAsync(
+                        buffer: new ArraySegment<byte>(buffer),
+                        cancellationToken: CancellationToken.None);
 
-                    await connection.ReceiveAsync(message);
+                    try
+                    {
+                        if (result.MessageType == WebSocketMessageType.Text)
+                        {
+                            var message = Encoding.UTF8.GetString(buffer, 0, result.Count);
+                            await connection.ReceiveAsync(message);
+                        }
+                        else if (result.MessageType == WebSocketMessageType.Close)
+                        {
+                            await OnDisconnected(connection);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Console.WriteLine(ex.Message);
+                    }
                 }
-                else if (result.MessageType == WebSocketMessageType.Close)
+                catch (Exception ex)
                 {
-                    await OnDisconnected(connection);
+                    Console.WriteLine(ex.Message);
                 }
             }
         }
