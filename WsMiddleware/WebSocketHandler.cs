@@ -43,12 +43,19 @@ namespace my_hero.ws
         {
             if (connection != null)
             {
-                _connections.Remove(connection);
+                try
+                {
+                    _connections.Remove(connection);
 
-                await connection.WebSocket.CloseAsync(
-                    closeStatus: WebSocketCloseStatus.NormalClosure,
-                    statusDescription: "Closed by the WebSocketHandler",
-                    cancellationToken: CancellationToken.None);
+                    await connection.WebSocket.CloseAsync(
+                        closeStatus: WebSocketCloseStatus.NormalClosure,
+                        statusDescription: "Closed by the WebSocketHandler",
+                        cancellationToken: CancellationToken.None);
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
+                }
             }
         }
 

@@ -41,6 +41,7 @@ namespace my_hero.Server
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
                 await SendMessageAsync("ERROR: INVALID MESSAGE");
             }
         }
