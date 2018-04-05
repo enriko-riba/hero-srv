@@ -9,7 +9,7 @@ namespace my_hero.Server
 {
     public class ClientHandler : WebSocketHandler
     {
-        protected override int BufferSize { get => 1024 * 4; }
+        protected override int BufferSize { get => 1024 * 8; }
 
         public override async Task<WebSocketConnection> OnConnected(HttpContext context)
         {
@@ -23,7 +23,8 @@ namespace my_hero.Server
                 if (connection == null)
                 {
                     var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-
+                    
+                    //  todo: verify token & fetch user data
                     connection = new ClientConnection(this)
                     {
                         NickName = name,

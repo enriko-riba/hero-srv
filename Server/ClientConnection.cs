@@ -9,53 +9,76 @@ namespace my_hero.Server
 {
     public class ClientConnection : WebSocketConnection
     {
-        public ClientConnection(WebSocketHandler handler) : base(handler)
-        {
-        }
+        public ClientConnection(WebSocketHandler handler) : base(handler) { }
 
         public string NickName { get; set; }
         public string IdToken { get; set; }
 
         public override async Task ReceiveAsync(string message)
         {
-            var receiveMessage = JsonConvert.DeserializeObject<ReceiveMessage>(message);
-
-            var receiver = Handler.Connections.FirstOrDefault(m => ((ClientConnection)m).NickName == receiveMessage.Receiver);
-
-            if (receiver != null)
+            try
             {
-                var sendMessage = JsonConvert.SerializeObject(new SendMessage
-                {
-                    Sender = NickName,
-                    Message = receiveMessage.Message
-                });
+                var clientMessage = JsonConvert.DeserializeObject<ClientMessage>(message);
 
-                await receiver.SendMessageAsync(sendMessage);
+                switch (clientMessage.Kind)
+                {
+                    case MessageKind.System:
+                        await SendMessageAsync("ERROR: UNSUPPORTED TYPE");
+                        break;
+
+                    case MessageKind.Command:
+                        await SendMessageAsync("OK: " + clientMessage.Data);
+                        break;
+
+                    case MessageKind.Chat:
+                        await DispatchMessageAsync("Chat: " + clientMessage.Data);
+                        break;
+
+                    default:    //  for all other kinds
+                        await SendMessageAsync("ERROR: UNSUPPORTED FORMAT");
+                        break;
+                }
             }
-            else
+            catch (Exception ex)
             {
-                var sendMessage = JsonConvert.SerializeObject(new SendMessage
-                {
-                    Sender = NickName,
-                    Message = "Can not seed to " + receiveMessage.Receiver
-                });
-
-                await SendMessageAsync(sendMessage);
+                await SendMessageAsync("ERROR: INVALID MESSAGE");
             }
         }
 
-        private class ReceiveMessage
+        private async Task DispatchMessageAsync(string message)
         {
-            public string Receiver { get; set; }
-
-            public string Message { get; set; }
+            int counter = 0;
+            var tasks = new Task[Handler.Connections.Count - 1];
+            foreach (var c in Handler.Connections.Cast<ClientConnection>())
+            {
+                if (c != this)
+                {
+                    tasks[counter++] = c.SendMessageAsync(message);
+                }
+            }
+            await Task.WhenAll(tasks);
         }
 
-        private class SendMessage
+        private ClientConnection FindClient(string idToken)
         {
-            public string Sender { get; set; }
+            var client = Handler.Connections.FirstOrDefault(m => ((ClientConnection)m).IdToken == idToken);
+            return client as ClientConnection;
+        }
 
-            public string Message { get; set; }
+        private class ClientMessage
+        {
+            public MessageKind Kind { get; set; }
+
+            public string Data { get; set; }
+        }
+
+        private enum MessageKind
+        {
+            Invalid,
+            System,
+            Command,
+            Chat
         }
     }
+
 }
