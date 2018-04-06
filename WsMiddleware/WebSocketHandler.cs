@@ -1,5 +1,7 @@
 using Microsoft.AspNetCore.Http;
+using my_hero.Server;
 using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
@@ -11,10 +13,6 @@ namespace my_hero.ws
     public abstract class WebSocketHandler
     {
         protected abstract int BufferSize { get; }
-
-        private List<WebSocketConnection> _connections = new List<WebSocketConnection>();
-
-        public List<WebSocketConnection> Connections { get => _connections; }
 
         public async Task ListenConnection(WebSocketConnection connection)
         {
@@ -58,8 +56,9 @@ namespace my_hero.ws
             {
                 try
                 {
-                    _connections.Remove(connection);
-
+                    var cc = SimpleServer.Instance.ConnMngr.Connections.FirstOrDefault(m => m as WebSocketConnection == connection);
+                    SimpleServer.Instance.ConnMngr.Remove(cc);
+                    
                     await connection.WebSocket.CloseAsync(
                         closeStatus: WebSocketCloseStatus.NormalClosure,
                         statusDescription: "Closed by the WebSocketHandler",

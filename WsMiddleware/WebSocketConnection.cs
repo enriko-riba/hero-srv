@@ -1,23 +1,14 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.WebSockets;
-using System.Text;
-using System.Threading;
-using System.Threading.Tasks;
-
 namespace my_hero.ws
 {
+    using System;
+    using System.Net.WebSockets;
+    using System.Text;
+    using System.Threading;
+    using System.Threading.Tasks;
+
     public abstract class WebSocketConnection
-    {
-        public WebSocketHandler Handler { get; }
-
+    {       
         public WebSocket WebSocket { get; set; }
-
-        public WebSocketConnection(WebSocketHandler handler)
-        {
-            Handler = handler;
-        }
 
         public virtual async Task SendMessageAsync(string message)
         {

@@ -1,16 +1,10 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
-using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Logging;
 using my_hero.Server;
 using my_hero.ws;
+using System;
 
 namespace my_hero
 {
@@ -27,7 +21,7 @@ namespace my_hero
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddMvc();
-            services.AddWebSocketManager();             
+            services.AddWebSocketManager();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -40,6 +34,7 @@ namespace my_hero
             app.UseMvcWithDefaultRoute();
             app.UseWebSockets();
             app.MapWebSocketManager("/srv", serviceProvider.GetService<ClientHandler>());
+            SimpleServer.Instance.Start();
         }
     }
 }
