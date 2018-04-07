@@ -5,7 +5,12 @@
     <TypeScriptCompileBlocked>true</TypeScriptCompileBlocked>
     <TypeScriptToolsVersion>Latest</TypeScriptToolsVersion>
     <IsPackable>false</IsPackable>
+    <RootNamespace>ws_hero</RootNamespace>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="WsMiddleware\WebSocketMiddleware.cs~RF6f144d7b.TMP" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.All" Version="2.0.6" />

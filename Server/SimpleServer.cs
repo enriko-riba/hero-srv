@@ -1,4 +1,4 @@
-namespace my_hero.Server
+namespace ws_hero.Server
 {
     using System;
     using System.Linq;
@@ -7,12 +7,13 @@ namespace my_hero.Server
     using System.Diagnostics;
     using System.Threading;
     using System.Threading.Tasks;
+    using ws_hero.Messages;
 
     public class SimpleServer
     {
         private static readonly SimpleServer singleton = new SimpleServer();
 
-        private ConnectionManager<ClientConnection> connMngr;
+        private ConnectionManager connMngr;
 
         private ulong tick = 0;
         private bool isRunning;
@@ -21,9 +22,9 @@ namespace my_hero.Server
         private Dictionary<string, Player> players = new Dictionary<string, Player>();
 
         private object bufferLock = new Object();
-        private Queue<Message> msgBuff1 = new Queue<Message>(1024);
-        private Queue<Message> msgBuff2 = new Queue<Message>(1024);
-        private Queue<Message> messageBuffer;
+        private Queue<RpgMessage> msgBuff1 = new Queue<RpgMessage>(1024);
+        private Queue<RpgMessage> msgBuff2 = new Queue<RpgMessage>(1024);
+        private Queue<RpgMessage> messageBuffer;
 
 
         private ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
@@ -33,30 +34,31 @@ namespace my_hero.Server
             //  TODO: implement real mapper that returns playerId from token/DB
             int playerCount = 0;
             Func<ClientConnection, string> mapper = (ClientConnection c) => (++playerCount).ToString();
-            connMngr = new ConnectionManager<ClientConnection>(mapper);
+            connMngr = new ConnectionManager(mapper);
         }
 
         public static SimpleServer Instance { get { return singleton; } }
 
-        public ConnectionManager<ClientConnection> ConnMngr { get => connMngr; }
+        public ConnectionManager ConnMngr { get => connMngr; }
 
-        public bool IsRunning { get { return this.isRunning; } }
+
+        public bool IsRunning { get => isRunning; private set => isRunning = value; }
 
         public void Start()
         {
-            if (isRunning) throw new Exception("Already running");
+            if (IsRunning) throw new Exception("Already running");
 
             Console.WriteLine("Starting server...");
             SwapBuffers();
-            this.isRunning = true;
-            this.mainLoopTask = Task.Run((Action)MainLoop);
+            IsRunning = true;
+            mainLoopTask = Task.Run((Action)MainLoop);
             Console.WriteLine("server started!");
         }
 
         public void Stop()
         {
             Console.WriteLine("Stopping server...");
-            this.isRunning = false;
+            IsRunning = false;
             if (this.mainLoopTask != null)
             {
                 Console.WriteLine("waiting for loop thread termination...");
@@ -66,7 +68,7 @@ namespace my_hero.Server
             Console.WriteLine("Server stopped!");
         }
 
-        public void AddMessage(ref Message m)
+        public void AddMessage(ref RpgMessage m)
         {
             this.messageBuffer.Enqueue(m);
         }
@@ -83,7 +85,7 @@ namespace my_hero.Server
             var sw = new Stopwatch();
             sw.Start();
 
-            while (isRunning)
+            while (IsRunning)
             {
                 var tickStart = sw.ElapsedMilliseconds;
                 tick++;
@@ -106,7 +108,7 @@ namespace my_hero.Server
             var hasItems = false;
             do
             {
-                hasItems = this.messageBuffer.TryDequeue(out Message msg);
+                hasItems = this.messageBuffer.TryDequeue(out RpgMessage msg);
                 if (hasItems)
                 {
                     ProcessRequest(ref msg);
@@ -114,24 +116,25 @@ namespace my_hero.Server
             } while (hasItems);
         }
 
-        private void ProcessRequest(ref Message msg)
+        private void ProcessRequest(ref RpgMessage msg)
         {
             Response r = new Response()
             {
                 Tick = tick,
                 Cid = msg.Cid,
-                Data = msg.Data,
                 TargetKind = TargetKind.All
             };
 
             //  TODO: implement
-            switch (msg.Command)
+            switch (msg.RpgType)
             {
-                case Command.NullCommand:                 
+                case RpgType.NullCommand:
+                    r.Data = $"CMD {msg.RpgType}: {msg.Data}";
                     responseBuffer.Enqueue(r);
                     break;
 
-                case Command.Chat:
+                case RpgType.Chat:
+                    r.Data = $"{ msg.PlayerId}: {msg.Data}";
                     responseBuffer.Enqueue(r);
                     break;
 
@@ -159,7 +162,8 @@ namespace my_hero.Server
                     var list = connMngr.GetAll(predicate);
                     foreach (var kvp in list)
                     {
-                        kvp.Value.SendMessageAsync(msg.Data).ContinueWith(c => c);
+                        var result = Newtonsoft.Json.JsonConvert.SerializeObject(msg);
+                        kvp.Value.SendMessageAsync(result).ContinueWith(c => c);
                     }
                 }
             } while (hasItems);

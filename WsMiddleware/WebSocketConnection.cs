@@ -1,4 +1,4 @@
-namespace my_hero.ws
+namespace ws_hero.sockets
 {
     using System;
     using System.Net.WebSockets;

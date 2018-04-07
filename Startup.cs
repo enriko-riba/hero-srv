@@ -2,9 +2,9 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using my_hero.Server;
-using my_hero.ws;
 using System;
+using ws_hero.Server;
+using ws_hero.sockets;
 
 namespace my_hero
 {
@@ -33,7 +33,7 @@ namespace my_hero
             }
             app.UseMvcWithDefaultRoute();
             app.UseWebSockets();
-            app.MapWebSocketManager("/srv", serviceProvider.GetService<ClientHandler>());
+            app.MapWebSocketManager("/srv", serviceProvider.GetService<WebSocketHandler>());
             SimpleServer.Instance.Start();
         }
     }

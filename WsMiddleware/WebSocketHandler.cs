@@ -1,18 +1,23 @@
 using Microsoft.AspNetCore.Http;
-using my_hero.Server;
 using System;
 using System.Linq;
-using System.Collections.Generic;
 using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ws_hero.Server;
 
-namespace my_hero.ws
+namespace ws_hero.sockets
 {
-    public abstract class WebSocketHandler
+    public class WebSocketHandler
     {
-        protected abstract int BufferSize { get; }
+        private const int BufferSize = 1024 * 8;
+
+        //  TODO: DI?
+        private ConnectionManager connMngr = SimpleServer.Instance.ConnMngr as ConnectionManager;
+
+        //  TODO: remove after implementing DB
+        private static int playerIdCounter;
 
         public async Task ListenConnection(WebSocketConnection connection)
         {
@@ -50,14 +55,14 @@ namespace my_hero.ws
             }
         }
 
-        public virtual async Task OnDisconnected(WebSocketConnection connection)
+        public async Task OnDisconnected(WebSocketConnection connection)
         {
             if (connection != null)
             {
                 try
                 {
-                    var cc = SimpleServer.Instance.ConnMngr.Connections.FirstOrDefault(m => m as WebSocketConnection == connection);
-                    SimpleServer.Instance.ConnMngr.Remove(cc);
+                    var cc = connMngr.Connections.FirstOrDefault(m => m as WebSocketConnection == connection);
+                    connMngr.Remove(cc);
                     
                     await connection.WebSocket.CloseAsync(
                         closeStatus: WebSocketCloseStatus.NormalClosure,
@@ -71,6 +76,29 @@ namespace my_hero.ws
             }
         }
 
-        public abstract Task<WebSocketConnection> OnConnected(HttpContext context);
+        public async Task<WebSocketConnection> OnConnected(HttpContext context)
+        {
+            var idToken = context.Request.Query["idToken"];
+            if (!string.IsNullOrEmpty(idToken))
+            {
+                var connection = connMngr.FindByToken(idToken);
+                if (connection == null)
+                {
+                    var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+
+                    //  TODO: verify token & fetch user data
+                    connection = new ClientConnection()
+                    {
+                        PlayerId = ++playerIdCounter,   //  TODO: set to real id (from DB?)
+                        IdToken = idToken,
+                        WebSocket = webSocket
+                    };
+
+                    connMngr.Add(connection);
+                }
+                return connection;
+            }
+            return null;
+        }
     }
 }

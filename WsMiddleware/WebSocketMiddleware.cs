@@ -1,13 +1,10 @@
 using Microsoft.AspNetCore.Http;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 
-namespace my_hero.ws
+namespace ws_hero.sockets
 {
     /// <summary>
-    /// This should be the last middleware in the pipeline when use websocket
+    /// This should be the last middleware in the pipeline when using websockets
     /// </summary>
     public class WebSocketMiddleware
     {

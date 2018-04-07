@@ -1,4 +1,6 @@
-namespace my_hero.Server
+using Newtonsoft.Json;
+
+namespace ws_hero.Messages
 {
     public struct Response
     {
@@ -6,7 +8,9 @@ namespace my_hero.Server
         public int Cid { get; set; }
         public string Data { get; set; }
 
+        [JsonIgnore]
         public TargetKind TargetKind { get; set; }
+        [JsonIgnore]
         public string[] Targets { get; set; }
 
     }

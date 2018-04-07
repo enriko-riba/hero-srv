@@ -1,13 +1,13 @@
-namespace my_hero.Server
+namespace ws_hero.Server
 {
     using System;
     using System.Linq;
     using System.Collections.Generic;
 
-    public class ConnectionManager<T> where T : class
+    public class ConnectionManager
     {
-        private Func<T, string> mapper;
-        public ConnectionManager(Func<T, string> mapper)
+        private Func<ClientConnection, string> mapper;
+        public ConnectionManager(Func<ClientConnection, string> mapper)
         {
             this.mapper = mapper;
         }
@@ -15,26 +15,26 @@ namespace my_hero.Server
         /// <summary>
         /// key, connection value pair
         /// </summary>
-        private Dictionary<string, T> connList = new Dictionary<string, T>();
+        private Dictionary<string, ClientConnection> connList = new Dictionary<string, ClientConnection>();
 
-        public ICollection<T> Connections { get => connList.Values; }
+        public ICollection<ClientConnection> Connections { get => connList.Values; }
 
-        public IEnumerable<KeyValuePair<string, T>> GetAll()
+        public IEnumerable<KeyValuePair<string, ClientConnection>> GetAll()
         {
             return connList.Where(c => true);
         }
 
-        public IEnumerable<KeyValuePair<string, T>> GetAll(Func<KeyValuePair<string, T>, bool> predicate)
+        public IEnumerable<KeyValuePair<string, ClientConnection>> GetAll(Func<KeyValuePair<string, ClientConnection>, bool> predicate)
         {
             return connList.Where(predicate);
         }
 
-        public T Get(string id)
+        public ClientConnection Get(string id)
         {
             return connList[id];
         }
 
-        public void Add(T connection)
+        public void Add(ClientConnection connection)
         {
             var id = this.mapper(connection);
             connList[id] = connection;
@@ -45,15 +45,21 @@ namespace my_hero.Server
             connList.Remove(id);
         }
 
-        public void Remove(T connection)
+        public void Remove(ClientConnection connection)
         {
-            var id = FindId(connection);
+            var id = FindByConnection(connection);
             connList.Remove(id);
         }
 
-        public string FindId(T connection)
+        public ClientConnection FindByToken(string token)
         {
-            var item = this.connList.FirstOrDefault(kvp => kvp.Value as T == connection);
+            var item = this.connList.FirstOrDefault(kvp => kvp.Value.IdToken == token);
+            return item.Value;
+        }
+
+        public string FindByConnection(ClientConnection connection)
+        {
+            var item = this.connList.FirstOrDefault(kvp => kvp.Value == connection);
             return item.Key;
         }
     }

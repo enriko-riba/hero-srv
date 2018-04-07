@@ -1,4 +1,4 @@
-namespace my_hero.Server
+namespace ws_hero.Server
 {
     public class Player
     {

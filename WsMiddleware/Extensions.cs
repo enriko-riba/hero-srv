@@ -1,13 +1,9 @@
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
-using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 
-namespace my_hero.ws
+namespace ws_hero.sockets
 {
     public static class Extensions
     {
@@ -18,15 +14,16 @@ namespace my_hero.ws
 
         public static IServiceCollection AddWebSocketManager(this IServiceCollection services)
         {
-            var handlerBaseType = typeof(WebSocketHandler);
+            services.AddSingleton(typeof(WebSocketHandler));
+            //var handlerBaseType = typeof(WebSocketHandler);
 
-            foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
-            {
-                if (type.GetTypeInfo().BaseType == handlerBaseType)
-                {
-                    services.AddSingleton(type);
-                }
-            }
+            //foreach (var type in Assembly.GetEntryAssembly().ExportedTypes)
+            //{
+            //    if (type.GetTypeInfo().BaseType == handlerBaseType)
+            //    {
+            //        services.AddSingleton(type);
+            //    }
+            //}
             
             return services;
         }

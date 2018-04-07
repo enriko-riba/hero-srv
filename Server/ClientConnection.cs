@@ -1,12 +1,11 @@
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using my_hero.ws;
-using Newtonsoft.Json;
-
-namespace my_hero.Server
+namespace ws_hero.Server
 {
+    using Newtonsoft.Json;
+    using System;
+    using System.Threading.Tasks;
+    using ws_hero.Messages;
+    using ws_hero.sockets;
+
     public class ClientConnection : WebSocketConnection
     {
         public int PlayerId { get; set; }
@@ -25,7 +24,6 @@ namespace my_hero.Server
                 }
 
                 var clientMessage = JsonConvert.DeserializeObject<ClientMessage>(message);
-
                 switch (clientMessage.Kind)
                 {
                     case ClientMessageKind.System:
@@ -33,15 +31,10 @@ namespace my_hero.Server
                         break;
 
                     case ClientMessageKind.Command:
-                        await SendMessageAsync("OK: " + clientMessage.Data);
-                        var m = Message.FromClientData(PlayerId, clientMessage.Kind, clientMessage.Data);
-                        SimpleServer.Instance.AddMessage(ref m);
-                        break;
-
                     case ClientMessageKind.Chat:
-                        //await DispatchMessageAsync("Chat: " + clientMessage.Data);
-                        var cm = Message.FromClientData(PlayerId, clientMessage.Kind, clientMessage.Data);
-                        SimpleServer.Instance.AddMessage(ref cm);
+                        //await SendMessageAsync("OK: " + clientMessage.Data);
+                        var rpgMsg = RpgMessage.FromClientData(PlayerId, ref clientMessage);
+                        SimpleServer.Instance.AddMessage(ref rpgMsg);
                         break;
 
                     default:    //  for all other kinds
@@ -76,12 +69,6 @@ namespace my_hero.Server
         //    return client as ClientConnection;
         //}
 
-        private class ClientMessage
-        {
-            public int Cid { get; set; }
-            public ClientMessageKind Kind { get; set; }
 
-            public string Data { get; set; }
-        }        
     }
 }
