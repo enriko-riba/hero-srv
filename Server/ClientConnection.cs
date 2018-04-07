@@ -23,6 +23,7 @@ namespace ws_hero.Server
                     return;
                 }
 
+                RpgMessage rpgMsg;
                 var clientMessage = JsonConvert.DeserializeObject<ClientMessage>(message);
                 switch (clientMessage.Kind)
                 {
@@ -31,9 +32,12 @@ namespace ws_hero.Server
                         break;
 
                     case ClientMessageKind.Command:
+                        rpgMsg = RpgMessage.FromClientMessage(PlayerId, ref clientMessage);
+                        SimpleServer.Instance.AddMessage(ref rpgMsg);
+                        break;
+
                     case ClientMessageKind.Chat:
-                        //await SendMessageAsync("OK: " + clientMessage.Data);
-                        var rpgMsg = RpgMessage.FromClientData(PlayerId, ref clientMessage);
+                        rpgMsg = RpgMessage.FromClientMessage(PlayerId, ref clientMessage);
                         SimpleServer.Instance.AddMessage(ref rpgMsg);
                         break;
 

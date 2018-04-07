@@ -6,8 +6,8 @@ namespace ws_hero.Server
 
     public class ConnectionManager
     {
-        private Func<ClientConnection, string> mapper;
-        public ConnectionManager(Func<ClientConnection, string> mapper)
+        private Func<ClientConnection, int> mapper;
+        public ConnectionManager(Func<ClientConnection, int> mapper)
         {
             this.mapper = mapper;
         }
@@ -15,21 +15,21 @@ namespace ws_hero.Server
         /// <summary>
         /// key, connection value pair
         /// </summary>
-        private Dictionary<string, ClientConnection> connList = new Dictionary<string, ClientConnection>();
+        private Dictionary<int, ClientConnection> connList = new Dictionary<int, ClientConnection>();
 
         public ICollection<ClientConnection> Connections { get => connList.Values; }
 
-        public IEnumerable<KeyValuePair<string, ClientConnection>> GetAll()
+        public IEnumerable<KeyValuePair<int, ClientConnection>> GetAll()
         {
             return connList.Where(c => true);
         }
 
-        public IEnumerable<KeyValuePair<string, ClientConnection>> GetAll(Func<KeyValuePair<string, ClientConnection>, bool> predicate)
+        public IEnumerable<KeyValuePair<int, ClientConnection>> GetAll(Func<KeyValuePair<int, ClientConnection>, bool> predicate)
         {
             return connList.Where(predicate);
         }
 
-        public ClientConnection Get(string id)
+        public ClientConnection Get(int id)
         {
             return connList[id];
         }
@@ -40,7 +40,7 @@ namespace ws_hero.Server
             connList[id] = connection;
         }
 
-        public void Remove(string id)
+        public void Remove(int id)
         {
             connList.Remove(id);
         }
@@ -57,7 +57,7 @@ namespace ws_hero.Server
             return item.Value;
         }
 
-        public string FindByConnection(ClientConnection connection)
+        public int FindByConnection(ClientConnection connection)
         {
             var item = this.connList.FirstOrDefault(kvp => kvp.Value == connection);
             return item.Key;

@@ -33,7 +33,7 @@ namespace ws_hero.Server
         {
             //  TODO: implement real mapper that returns playerId from token/DB
             int playerCount = 0;
-            Func<ClientConnection, string> mapper = (ClientConnection c) => (++playerCount).ToString();
+            Func<ClientConnection, int> mapper = (ClientConnection c) => ++playerCount;
             connMngr = new ConnectionManager(mapper);
         }
 
@@ -135,6 +135,8 @@ namespace ws_hero.Server
 
                 case RpgType.Chat:
                     r.Data = $"{ msg.PlayerId}: {msg.Data}";
+                    r.TargetKind = TargetKind.TargetAllExcept;
+                    r.Targets = new int[] { msg.PlayerId };
                     responseBuffer.Enqueue(r);
                     break;
 
@@ -151,11 +153,11 @@ namespace ws_hero.Server
                 hasItems = this.responseBuffer.TryDequeue(out Response msg);
                 if (hasItems)
                 {
-                    Func<KeyValuePair<string, ClientConnection>, bool> predicate;
+                    Func<KeyValuePair<int, ClientConnection>, bool> predicate;
                     if (msg.TargetKind == TargetKind.TargetAllExcept)
-                        predicate = (kvp) => !msg.Targets.Any(kvp.Key.Contains);
+                        predicate = (kvp) => !msg.Targets.Any( k => k == kvp.Key);
                     else if (msg.TargetKind == TargetKind.TargetList)
-                        predicate = (kvp) => msg.Targets.Any(kvp.Key.Contains);
+                        predicate = (kvp) => msg.Targets.Any(k => k == kvp.Key);
                     else
                         predicate = (kvp) => true;
 

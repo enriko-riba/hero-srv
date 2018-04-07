@@ -8,7 +8,7 @@ namespace ws_hero.Messages
         public RpgType RpgType { get; set; }
         public string Data { get; set; }
 
-        public static RpgMessage FromClientData(int playerId, ref ClientMessage cm)
+        public static RpgMessage FromClientMessage(int playerId, ref ClientMessage cm)
         {
             //  TODO: define data structure, parse cmd, parse payload
             
