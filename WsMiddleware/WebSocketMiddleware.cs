@@ -25,11 +25,7 @@ namespace ws_hero.sockets
                 if (connection != null)
                 {
                     await _webSocketHandler.ListenConnection(connection);
-                }
-                else
-                {
-                    context.Response.StatusCode = 404;
-                }
+                }                
             }
         }
     }

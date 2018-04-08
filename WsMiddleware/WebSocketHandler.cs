@@ -82,11 +82,41 @@ namespace ws_hero.sockets
             if (!string.IsNullOrEmpty(idToken))
             {
                 var connection = connMngr.FindByToken(idToken);
+
+                //-------------------------------
+                //  remove stale connections
+                //-------------------------------
+                if (connection!=null && connection.WebSocket.State != WebSocketState.Open)
+                {
+                    connMngr.Remove(connection);
+                    connection = null;
+                }
+
+                //------------------------------------
+                //  create new connection if needed
+                //------------------------------------
                 if (connection == null)
                 {
+                    //-------------------------------
+                    //  verify google id_token
+                    //-------------------------------
+                    string email;
+                    try
+                    {
+                        var tr = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken);
+                        email = tr.Email;
+                    }
+                    catch(Exception ex)
+                    {
+                        Console.WriteLine(ex);
+                        context.Response.StatusCode = 401;
+                        return null;
+                    }
+
+
                     var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
-                    //  TODO: verify token & fetch user data
+                    //  TODO: fetch user data
                     connection = new ClientConnection()
                     {
                         PlayerId = ++playerIdCounter,   //  TODO: set to real id (from DB?)
@@ -98,6 +128,8 @@ namespace ws_hero.sockets
                 }
                 return connection;
             }
+            
+            context.Response.StatusCode = 404;
             return null;
         }
     }

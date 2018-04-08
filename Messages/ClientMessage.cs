@@ -1,6 +1,6 @@
 ﻿namespace ws_hero.Messages
 {
-    public class ClientMessage
+    public struct ClientMessage
     {
         public int Cid { get; set; }
         public ClientMessageKind Kind { get; set; }

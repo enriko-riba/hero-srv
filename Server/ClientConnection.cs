@@ -49,30 +49,8 @@ namespace ws_hero.Server
             catch (Exception ex)
             {
                 Console.WriteLine(ex.Message);
-                await SendMessageAsync("ERROR: INVALID MESSAGE");
+                await SendMessageAsync($"ERROR: {ex.Message}");
             }
         }
-
-        //private async Task DispatchMessageAsync(string message)
-        //{
-        //    int counter = 0;
-        //    var tasks = new Task[Handler.Connections.Count - 1];
-        //    foreach (var c in Handler.Connections.Cast<ClientConnection>())
-        //    {
-        //        if (c != this)
-        //        {
-        //            tasks[counter++] = c.SendMessageAsync(message);
-        //        }
-        //    }
-        //    await Task.WhenAll(tasks);
-        //}
-
-        //private ClientConnection FindClient(string idToken)
-        //{
-        //    var client = Handler.Connections.FirstOrDefault(m => ((ClientConnection)m).IdToken == idToken);
-        //    return client as ClientConnection;
-        //}
-
-
     }
 }
