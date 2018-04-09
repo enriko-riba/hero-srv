@@ -11,7 +11,7 @@ namespace ws_hero.Messages
         [JsonIgnore]
         public TargetKind TargetKind { get; set; }
         [JsonIgnore]
-        public int[] Targets { get; set; }
+        public string[] Targets { get; set; }
 
     }
     public enum TargetKind

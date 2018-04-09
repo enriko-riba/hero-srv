@@ -6,48 +6,45 @@ namespace ws_hero.Server
 
     public class ConnectionManager
     {
-        private Func<ClientConnection, int> mapper;
-        public ConnectionManager(Func<ClientConnection, int> mapper)
+        public ConnectionManager()
         {
-            this.mapper = mapper;
         }
 
         /// <summary>
         /// key, connection value pair
         /// </summary>
-        private Dictionary<int, ClientConnection> connList = new Dictionary<int, ClientConnection>();
+        private Dictionary<string, ClientConnection> connList = new Dictionary<string, ClientConnection>();
 
         public ICollection<ClientConnection> Connections { get => connList.Values; }
 
-        public IEnumerable<KeyValuePair<int, ClientConnection>> GetAll()
+        public IEnumerable<KeyValuePair<string, ClientConnection>> GetAll()
         {
             return connList.Where(c => true);
         }
 
-        public IEnumerable<KeyValuePair<int, ClientConnection>> GetAll(Func<KeyValuePair<int, ClientConnection>, bool> predicate)
+        public IEnumerable<KeyValuePair<string, ClientConnection>> GetAll(Func<KeyValuePair<string, ClientConnection>, bool> predicate)
         {
             return connList.Where(predicate);
         }
 
-        public ClientConnection Get(int id)
+        public ClientConnection Get(string id)
         {
             return connList[id];
         }
 
         public void Add(ClientConnection connection)
         {
-            var id = this.mapper(connection);
-            connList[id] = connection;
+            connList[connection.PlayerId] = connection;
         }
 
-        public void Remove(int id)
+        public void Remove(string id)
         {
             connList.Remove(id);
         }
 
         public void Remove(ClientConnection connection)
         {
-            var id = FindByConnection(connection);
+            var id = FindIdByConnection(connection);
             connList.Remove(id);
         }
 
@@ -57,7 +54,7 @@ namespace ws_hero.Server
             return item.Value;
         }
 
-        public int FindByConnection(ClientConnection connection)
+        public string FindIdByConnection(ClientConnection connection)
         {
             var item = this.connList.FirstOrDefault(kvp => kvp.Value == connection);
             return item.Key;

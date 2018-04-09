@@ -4,14 +4,14 @@ namespace ws_hero.Messages
 {
     public struct RpgMessage
     {
-        public int PlayerId { get; set; }
+        public string PlayerId { get; set; }
         public int Cid { get; set; }
 
         public RpgType RpgType { get; set; }
         public string Data { get; set; }
 
 
-        public static RpgMessage FromClientMessage(int playerId, ref ClientMessage cm)
+        public static RpgMessage FromClientMessage(string playerId, ref ClientMessage cm)
         {
             //  TODO: define data structure, parse cmd, parse payload
             var msg = new RpgMessage()

@@ -8,7 +8,7 @@ namespace ws_hero.Server
 
     public class ClientConnection : WebSocketConnection
     {
-        public int PlayerId { get; set; }
+        public string PlayerId { get; set; }
         public string IdToken { get; set; }
 
 

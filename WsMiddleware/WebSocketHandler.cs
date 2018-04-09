@@ -5,24 +5,28 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using ws_hero.DAL;
 using ws_hero.Server;
 
 namespace ws_hero.sockets
 {
     public class WebSocketHandler
     {
-        private const int BufferSize = 1024 * 8;
+        private const int BUFFER_SIZE = 1024 * 8;
+
+        public WebSocketHandler()
+        {
+            cr.Init();
+        }
+
+        private CosmosRepo cr = new CosmosRepo();
 
         //  TODO: DI?
         private ConnectionManager connMngr = SimpleServer.Instance.ConnMngr as ConnectionManager;
 
-        //  TODO: remove after implementing DB
-        private static int playerIdCounter;
-
         public async Task ListenConnection(WebSocketConnection connection)
         {
-            var buffer = new byte[BufferSize];
-
+            var buffer = new byte[BUFFER_SIZE];
             while (connection.WebSocket.State == WebSocketState.Open)
             {
                 try
@@ -63,7 +67,7 @@ namespace ws_hero.sockets
                 {
                     var cc = connMngr.Connections.FirstOrDefault(m => m as WebSocketConnection == connection);
                     connMngr.Remove(cc);
-                    
+
                     await connection.WebSocket.CloseAsync(
                         closeStatus: WebSocketCloseStatus.NormalClosure,
                         statusDescription: "Closed by the WebSocketHandler",
@@ -86,7 +90,7 @@ namespace ws_hero.sockets
                 //-------------------------------
                 //  remove stale connections
                 //-------------------------------
-                if (connection!=null && connection.WebSocket.State != WebSocketState.Open)
+                if (connection != null && connection.WebSocket.State != WebSocketState.Open)
                 {
                     connMngr.Remove(connection);
                     connection = null;
@@ -100,13 +104,21 @@ namespace ws_hero.sockets
                     //-------------------------------
                     //  verify google id_token
                     //-------------------------------
-                    string email;
+                    User user = new User();
                     try
                     {
                         var tr = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken);
-                        email = tr.Email;
+                        user = new User()
+                        {
+                            Email = tr.Email,
+                            FirstName = tr.GivenName,
+                            LastName = tr.FamilyName,
+                            DisplayName = tr.Name,
+                            PictureURL = tr.Picture
+                        };
+                        user = await cr.CreateUserIfNotExists(user);
                     }
-                    catch(Exception ex)
+                    catch (Exception ex)
                     {
                         Console.WriteLine(ex);
                         context.Response.StatusCode = 401;
@@ -116,10 +128,11 @@ namespace ws_hero.sockets
 
                     var webSocket = await context.WebSockets.AcceptWebSocketAsync();
 
+
                     //  TODO: fetch user data
                     connection = new ClientConnection()
                     {
-                        PlayerId = ++playerIdCounter,   //  TODO: set to real id (from DB?)
+                        PlayerId = user.Email,
                         IdToken = idToken,
                         WebSocket = webSocket
                     };
@@ -128,7 +141,7 @@ namespace ws_hero.sockets
                 }
                 return connection;
             }
-            
+
             context.Response.StatusCode = 404;
             return null;
         }

@@ -30,14 +30,11 @@ namespace ws_hero.Server
         private ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
 
         public SimpleServer()
-        {
-            //  TODO: implement real mapper that returns playerId from token/DB
-            int playerCount = 0;
-            Func<ClientConnection, int> mapper = (ClientConnection c) => ++playerCount;
-            connMngr = new ConnectionManager(mapper);
+        {                    
+            connMngr = new ConnectionManager();
         }
 
-        public static SimpleServer Instance { get { return singleton; } }
+        public static SimpleServer Instance { get => singleton; }
 
         public ConnectionManager ConnMngr { get => connMngr; }
 
@@ -136,7 +133,7 @@ namespace ws_hero.Server
                 case RpgType.Chat:
                     r.Data = $"{ msg.PlayerId}: {msg.Data}";
                     r.TargetKind = TargetKind.TargetAllExcept;
-                    r.Targets = new int[] { msg.PlayerId };
+                    r.Targets = new string[] { msg.PlayerId };
                     responseBuffer.Enqueue(r);
                     break;
 
@@ -153,11 +150,11 @@ namespace ws_hero.Server
                 hasItems = this.responseBuffer.TryDequeue(out Response msg);
                 if (hasItems)
                 {
-                    Func<KeyValuePair<int, ClientConnection>, bool> predicate;
+                    Func<KeyValuePair<string, ClientConnection>, bool> predicate;
                     if (msg.TargetKind == TargetKind.TargetAllExcept)
-                        predicate = (kvp) => !msg.Targets.Any( k => k == kvp.Key);
+                        predicate = (kvp) => !msg.Targets.Any(kvp.Key.Contains);
                     else if (msg.TargetKind == TargetKind.TargetList)
-                        predicate = (kvp) => msg.Targets.Any(k => k == kvp.Key);
+                        predicate = (kvp) => msg.Targets.Any(kvp.Key.Contains);
                     else
                         predicate = (kvp) => true;
 
