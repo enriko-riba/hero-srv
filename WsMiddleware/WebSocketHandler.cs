@@ -14,13 +14,6 @@ namespace ws_hero.sockets
     {
         private const int BUFFER_SIZE = 1024 * 8;
 
-        public WebSocketHandler()
-        {
-            cr.Init();
-        }
-
-        private CosmosRepo cr = new CosmosRepo();
-
         //  TODO: DI?
         private ConnectionManager connMngr = SimpleServer.Instance.ConnMngr as ConnectionManager;
 
@@ -114,9 +107,9 @@ namespace ws_hero.sockets
                             FirstName = tr.GivenName,
                             LastName = tr.FamilyName,
                             DisplayName = tr.Name,
-                            PictureURL = tr.Picture
+                            PictureURL = tr.Picture                            
                         };
-                        user = await cr.CreateUserIfNotExists(user);
+                        await SimpleServer.Instance.UpsertUserAsync(user);
                     }
                     catch (Exception ex)
                     {

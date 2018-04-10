@@ -5,7 +5,9 @@ namespace ws_hero.Messages
     public struct RpgMessage
     {
         public string PlayerId { get; set; }
+
         public int Cid { get; set; }
+        public int ClientTime { get; set; }
 
         public RpgType RpgType { get; set; }
         public string Data { get; set; }
@@ -18,6 +20,7 @@ namespace ws_hero.Messages
             {
                 PlayerId = playerId,
                 Cid = cm.Cid,
+                ClientTime = cm.Created,
                 Data = cm.Data
             };
 
@@ -25,7 +28,6 @@ namespace ws_hero.Messages
             {
                 case ClientMessageKind.Chat:
                     msg.RpgType = RpgType.Chat;
-                    msg.Data = cm.Data;
                     break;
 
                 case ClientMessageKind.Command:
@@ -34,7 +36,6 @@ namespace ws_hero.Messages
 
                 default:
                     msg.RpgType = RpgType.NullCommand;
-                    msg.Data = cm.Data;
                     break;
             }
 

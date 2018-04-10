@@ -2,7 +2,6 @@
 {
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
-    using Newtonsoft.Json;
     using System;
     using System.Net;
     using System.Threading.Tasks;
@@ -18,13 +17,13 @@
         private DocumentClient client = new DocumentClient(new Uri(endpointUri), primaryKey);
 
 
-        public async Task Init()
+        public async Task InitAsync()
         {
             await this.client.CreateDatabaseIfNotExistsAsync(new Database { Id = DB_ID });
             await this.client.CreateDocumentCollectionIfNotExistsAsync(UriFactory.CreateDatabaseUri(DB_ID), new DocumentCollection { Id = USERS_ID });
         }
         
-        public async Task<User> CreateUserIfNotExists(User user)
+        public async Task<User> CreateUserIfNotExistsAsync(User user)
         {
             try
             {
@@ -44,30 +43,5 @@
                 }
             }
         }
-    }
-
-    public class User
-    {
-        [JsonProperty(PropertyName = "id")]
-        public string Email { get; set; }
-        public string LastName { get; set; }
-        public string FirstName { get; set; }
-        public string DisplayName { get; set; }
-        public string PictureURL { get; set; }
-
-        public PlayerData PlayerData { get; set; }
-
-        [JsonConverter(typeof(UnixDateTimeConverter))]
-        [JsonProperty(PropertyName = "_ts")]
-        public DateTime LastLogin { get; set; }
-
-        public override string ToString()
-        {
-            return JsonConvert.SerializeObject(this);
-        }
-    }
-
-    public class PlayerData
-    {
     }
 }

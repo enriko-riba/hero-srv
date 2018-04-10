@@ -8,6 +8,7 @@ namespace ws_hero.Server
     using System.Threading;
     using System.Threading.Tasks;
     using ws_hero.Messages;
+    using ws_hero.DAL;
 
     public class SimpleServer
     {
@@ -19,7 +20,7 @@ namespace ws_hero.Server
         private bool isRunning;
         private Task mainLoopTask;
 
-        private Dictionary<string, Player> players = new Dictionary<string, Player>();
+        private Dictionary<string, User> players = new Dictionary<string, User>();
 
         private object bufferLock = new Object();
         private Queue<RpgMessage> msgBuff1 = new Queue<RpgMessage>(1024);
@@ -28,30 +29,38 @@ namespace ws_hero.Server
 
 
         private ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
+        private CosmosRepo cr = new CosmosRepo();
 
         public SimpleServer()
         {                    
-            connMngr = new ConnectionManager();
+            connMngr = new ConnectionManager();            
         }
 
         public static SimpleServer Instance { get => singleton; }
 
         public ConnectionManager ConnMngr { get => connMngr; }
-
-
+        
         public bool IsRunning { get => isRunning; private set => isRunning = value; }
 
-        public void Start()
+        /// <summary>
+        /// Starts the server.
+        /// </summary>
+        public async Task Start()
         {
             if (IsRunning) throw new Exception("Already running");
 
             Console.WriteLine("Starting server...");
+            await cr.InitAsync();
+
             SwapBuffers();
             IsRunning = true;
             mainLoopTask = Task.Run((Action)MainLoop);
             Console.WriteLine("server started!");
         }
 
+        /// <summary>
+        /// Stops the server.
+        /// </summary>
         public void Stop()
         {
             Console.WriteLine("Stopping server...");
@@ -65,11 +74,35 @@ namespace ws_hero.Server
             Console.WriteLine("Server stopped!");
         }
 
+
+        /// <summary>
+        /// Updates or inserts the given user.
+        /// </summary>
+        /// <param name="user"></param>
+        /// <returns></returns>
+        public async Task UpsertUserAsync(User user)
+        {
+            var usr = await cr.CreateUserIfNotExistsAsync(user);
+            
+            //  if null its a new user so we set it to active
+            if (usr.IsActive == null) usr.IsActive = true;
+
+            if(usr.IsActive.Value && usr.GameData == null)
+                usr.GameData = new GameData();
+
+            //  TODO: implement new game data hook for initializing any game state
+
+            this.players[user.Id] = user;
+        }
+
+        /// <summary>
+        /// Enqueues a new message for dispatching.
+        /// </summary>
+        /// <param name="m"></param>
         public void AddMessage(ref RpgMessage m)
         {
             this.messageBuffer.Enqueue(m);
         }
-
 
         private void SwapBuffers()
         {
@@ -89,6 +122,7 @@ namespace ws_hero.Server
 
                 SwapBuffers();
                 ProcessRequests();
+                ProcessState();
                 DispatchResponses();
 
                 var tickEnd = sw.ElapsedMilliseconds;
@@ -99,6 +133,11 @@ namespace ws_hero.Server
             Console.WriteLine("Main loop ended");
         }
 
+
+        private void ProcessState()
+        {
+
+        }
 
         private void ProcessRequests()
         {
@@ -141,6 +180,8 @@ namespace ws_hero.Server
                     break;
             }
         }
+
+       
 
         private void DispatchResponses()
         {
