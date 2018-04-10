@@ -177,7 +177,7 @@ namespace ws_hero.Server
         /// Processes time based game state.
         /// </summary>
         /// <param name="ellapsed"></param>
-        private void ProcessState(long ellapsed, bool shouldSync)
+        private async Task ProcessState(long ellapsed, bool shouldSync)
         {
             foreach(var kvp in this.players)
             {
@@ -203,7 +203,13 @@ namespace ws_hero.Server
                         Targets = new string[] { user.Id }
                     };
                     responseBuffer.Enqueue(r);
-                }
+
+                    var task = cr.SaveUserAsync(user);
+                    task.ContinueWith((t) =>
+                    {
+                        this.players[t.Result.Id] = t.Result;
+                    });
+                }             
             }
         }
 
