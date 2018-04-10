@@ -97,19 +97,29 @@ namespace ws_hero.sockets
                     //-------------------------------
                     //  verify google id_token
                     //-------------------------------
-                    User user = new User();
+                    string email;
                     try
                     {
                         var tr = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken);
-                        user = new User()
+                        email = tr.Email;
+                        var user = await SimpleServer.Instance.SignInUserAsync(email, tr.FamilyName, tr.GivenName, tr.Name, tr.Picture);
+
+                        if(user!=null)
                         {
-                            Email = tr.Email,
-                            FirstName = tr.GivenName,
-                            LastName = tr.FamilyName,
-                            DisplayName = tr.Name,
-                            PictureURL = tr.Picture                            
-                        };
-                        await SimpleServer.Instance.UpsertUserAsync(user);
+                            var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                            connection = new ClientConnection()
+                            {
+                                PlayerId = email,
+                                IdToken = idToken,
+                                WebSocket = webSocket
+                            };
+                            connMngr.Add(connection);
+                        }
+                        else
+                        {
+                            context.Response.StatusCode = 403;
+                            return null;
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -117,20 +127,6 @@ namespace ws_hero.sockets
                         context.Response.StatusCode = 401;
                         return null;
                     }
-
-
-                    var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-
-
-                    //  TODO: fetch user data
-                    connection = new ClientConnection()
-                    {
-                        PlayerId = user.Email,
-                        IdToken = idToken,
-                        WebSocket = webSocket
-                    };
-
-                    connMngr.Add(connection);
                 }
                 return connection;
             }

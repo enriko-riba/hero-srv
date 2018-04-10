@@ -22,10 +22,10 @@ namespace ws_hero.Server
 
         private Dictionary<string, User> players = new Dictionary<string, User>();
 
-        private object bufferLock = new Object();
-        private Queue<RpgMessage> msgBuff1 = new Queue<RpgMessage>(1024);
-        private Queue<RpgMessage> msgBuff2 = new Queue<RpgMessage>(1024);
-        private Queue<RpgMessage> messageBuffer;
+        //private object bufferLock = new Object();
+        private Queue<RpgMessage>[] messageBuffers = new [] {new Queue<RpgMessage>(1024), new Queue<RpgMessage>(1024) };
+        private int writeBuffer = 0;
+        private int readBuffer = 1;
 
 
         private ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
@@ -51,6 +51,11 @@ namespace ws_hero.Server
 
             Console.WriteLine("Starting server...");
             await cr.InitAsync();
+            var userList = cr.GetActiveUsers();
+            foreach (var u in userList)
+            {
+                this.players.Add(u.Id, u);
+            }
 
             SwapBuffers();
             IsRunning = true;
@@ -80,19 +85,40 @@ namespace ws_hero.Server
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public async Task UpsertUserAsync(User user)
+        public async Task<User> SignInUserAsync(string email, string lastName, string firstName, string displayName, string photoUrl)
         {
-            var usr = await cr.CreateUserIfNotExistsAsync(user);
-            
-            //  if null its a new user so we set it to active
-            if (usr.IsActive == null) usr.IsActive = true;
+            var usr = await cr.GetUserAsync(email);
 
-            if(usr.IsActive.Value && usr.GameData == null)
-                usr.GameData = new GameData();
+            //-------------------------
+            //  bail out if inactive
+            //-------------------------
+            if (usr!=null && !usr.IsActive.Value)
+            {
+                this.players.Remove(usr.Id);
+                return null;
+            }
 
-            //  TODO: implement new game data hook for initializing any game state
+            //-------------------------
+            //  init new users
+            //-------------------------
+            if (usr == null) 
+            {
+                usr = new User()
+                {
+                    Email = email,
+                    LastName = lastName,
+                    FirstName = firstName,
+                    DisplayName = displayName,
+                    PictureURL = photoUrl,
+                    IsActive = true,
+                    GameData = new GameData()
+                };
+                //  TODO: implement new game data hook for initializing any game state
+            }
 
-            this.players[user.Id] = user;
+            usr = await cr.SaveUserAsync(usr);
+            this.players[usr.Id] = usr;
+            return usr;
         }
 
         /// <summary>
@@ -101,12 +127,16 @@ namespace ws_hero.Server
         /// <param name="m"></param>
         public void AddMessage(ref RpgMessage m)
         {
-            this.messageBuffer.Enqueue(m);
+            this.messageBuffers[writeBuffer].Enqueue(m);
         }
 
+        /// <summary>
+        /// Swaps the msgBuff1 and msgBuff2.
+        /// </summary>
         private void SwapBuffers()
         {
-            this.messageBuffer = this.messageBuffer == this.msgBuff1 ? this.msgBuff2 : this.msgBuff1;
+            writeBuffer = ++writeBuffer % 2;
+            readBuffer = ++readBuffer % 2;
         }
 
         private void MainLoop()
@@ -115,36 +145,76 @@ namespace ws_hero.Server
             var sw = new Stopwatch();
             sw.Start();
 
+            const int SLEEP_MILLISECONDS = 200;
+            const int SYNC_MILLISECONDS = 5000;
+            long tickEnd = sw.ElapsedMilliseconds;
+            long ellapsed, tickStart;
+
+            long lastStateSync = 0;
             while (IsRunning)
             {
-                var tickStart = sw.ElapsedMilliseconds;
                 tick++;
+                tickStart = sw.ElapsedMilliseconds;
+                ellapsed = tickStart - tickEnd;
 
                 SwapBuffers();
                 ProcessRequests();
-                ProcessState();
+
+                bool shouldSync = (tickStart - lastStateSync > SYNC_MILLISECONDS);
+                ProcessState(ellapsed, shouldSync);
+                if (shouldSync) lastStateSync = tickStart;
+
                 DispatchResponses();
 
-                var tickEnd = sw.ElapsedMilliseconds;
-                var duration = tickEnd - tickStart;
-                Thread.Sleep(200);
+                tickEnd = sw.ElapsedMilliseconds;
+                Thread.Sleep(SLEEP_MILLISECONDS);
             }
 
             Console.WriteLine("Main loop ended");
         }
 
-
-        private void ProcessState()
+        /// <summary>
+        /// Processes time based game state.
+        /// </summary>
+        /// <param name="ellapsed"></param>
+        private void ProcessState(long ellapsed, bool shouldSync)
         {
+            foreach(var kvp in this.players)
+            {
+                var user = kvp.Value;
+                var city = user.GameData.City;
 
+                var seconds = ellapsed / 1000;
+
+                city.food += city.prodFood * seconds;
+                city.wood += city.prodWood * seconds;
+                city.stone += city.prodStone * seconds;
+
+                //  send data to client if needed
+                if(shouldSync)
+                {                    
+                    Response r = new Response()
+                    {
+                        Tick = this.tick,
+                        Cid = 0,
+                        Data = $"SYNC:",
+                        TargetKind = TargetKind.TargetList,
+                        Targets = new string[] { user.Id }
+                    };
+                    responseBuffer.Enqueue(r);
+                }
+            }
         }
 
+        /// <summary>
+        /// Handles incomming client requests
+        /// </summary>
         private void ProcessRequests()
         {
             var hasItems = false;
             do
             {
-                hasItems = this.messageBuffer.TryDequeue(out RpgMessage msg);
+                hasItems = this.messageBuffers[readBuffer].TryDequeue(out RpgMessage msg);
                 if (hasItems)
                 {
                     ProcessRequest(ref msg);

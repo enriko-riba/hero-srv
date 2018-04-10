@@ -3,6 +3,8 @@
     using Microsoft.Azure.Documents;
     using Microsoft.Azure.Documents.Client;
     using System;
+    using System.Linq;
+    using System.Collections.Generic;
     using System.Net;
     using System.Threading.Tasks;
 
@@ -16,6 +18,7 @@
 
         private DocumentClient client = new DocumentClient(new Uri(endpointUri), primaryKey);
 
+        private Uri userCollectionLink = UriFactory.CreateDocumentCollectionUri(DB_ID, USERS_ID);
 
         public async Task InitAsync()
         {
@@ -23,6 +26,42 @@
             await this.client.CreateDocumentCollectionIfNotExistsAsync(UriFactory.CreateDatabaseUri(DB_ID), new DocumentCollection { Id = USERS_ID });
         }
         
+        public IEnumerable<User> GetActiveUsers()
+        {
+            var query = client.CreateDocumentQuery<User>(userCollectionLink)
+                        .Where(so => so.IsActive == true)
+                        .ToArray();
+            return query;                        
+        }
+
+        public async Task<User> GetUserAsync(string Id)
+        {
+            try
+            {
+                var result = await this.client.ReadDocumentAsync<User>(UriFactory.CreateDocumentUri(DB_ID, USERS_ID, Id));
+                return result.Document;
+            }
+            catch (DocumentClientException de)
+            {
+                if (de.StatusCode != HttpStatusCode.NotFound) throw;
+            }
+            return null;
+        }
+
+        public async Task<User> SaveUserAsync(User user)
+        {
+            try
+            {
+                var response = await this.client.UpsertDocumentAsync(UriFactory.CreateDocumentCollectionUri(DB_ID, USERS_ID), user);
+                user = Newtonsoft.Json.JsonConvert.DeserializeObject<User>(response.Resource.ToString());
+                return user;
+            }
+            catch (Exception ex)
+            {
+                throw;
+            }
+            return null;
+        }
         public async Task<User> CreateUserIfNotExistsAsync(User user)
         {
             try

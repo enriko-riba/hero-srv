@@ -9,9 +9,9 @@
             prodStone = 1f;
         }
 
-        public int wood { get; set; }
-        public int food { get; set; }
-        public int stone { get; set; }
+        public float wood { get; set; }
+        public float food { get; set; }
+        public float stone { get; set; }
 
         // base production
         public float prodWood { get; set; }
