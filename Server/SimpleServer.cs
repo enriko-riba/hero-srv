@@ -251,8 +251,6 @@ namespace ws_hero.Server
             }
         }
 
-       
-
         private void DispatchResponses()
         {
             var hasItems = false;

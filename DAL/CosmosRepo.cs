@@ -60,8 +60,8 @@
             {
                 throw;
             }
-            return null;
         }
+
         public async Task<User> CreateUserIfNotExistsAsync(User user)
         {
             try
