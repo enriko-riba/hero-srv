@@ -192,12 +192,13 @@ namespace ws_hero.Server
 
                 //  send data to client if needed
                 if(shouldSync)
-                {                    
+                {
+                    var data = Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData);
                     Response r = new Response()
                     {
                         Tick = this.tick,
                         Cid = 0,
-                        Data = $"SYNC:",
+                        Data = $"SYNC:{data}",
                         TargetKind = TargetKind.TargetList,
                         Targets = new string[] { user.Id }
                     };
