@@ -177,14 +177,14 @@ namespace ws_hero.Server
         /// Processes time based game state.
         /// </summary>
         /// <param name="ellapsed"></param>
-        private async Task ProcessState(long ellapsed, bool shouldSync)
+        private void ProcessState(long ellapsed, bool shouldSync)
         {
             foreach(var kvp in this.players)
             {
                 var user = kvp.Value;
                 var city = user.GameData.City;
 
-                var seconds = ellapsed / 1000;
+                var seconds = (float)ellapsed / 1000f;
 
                 city.food += city.prodFood * seconds;
                 city.wood += city.prodWood * seconds;
