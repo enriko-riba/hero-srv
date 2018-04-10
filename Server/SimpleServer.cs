@@ -258,6 +258,9 @@ namespace ws_hero.Server
             }
         }
 
+        /// <summary>
+        /// Sends responses to clients.
+        /// </summary>
         private void DispatchResponses()
         {
             var hasItems = false;
