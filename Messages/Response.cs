@@ -8,6 +8,8 @@ namespace ws_hero.Messages
         public int Cid { get; set; }
         public string Data { get; set; }
 
+        public string v { get => "0.1"; }
+
         [JsonIgnore]
         public TargetKind TargetKind { get; set; }
         [JsonIgnore]
