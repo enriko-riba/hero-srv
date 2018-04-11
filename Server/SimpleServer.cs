@@ -193,17 +193,7 @@ namespace ws_hero.Server
                 //  send data to client if needed
                 if(shouldSync)
                 {
-                    var data = Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData);
-                    Response r = new Response()
-                    {
-                        Tick = this.tick,
-                        Cid = 0,
-                        Data = $"SYNC:{data}",
-                        TargetKind = TargetKind.TargetList,
-                        Targets = new string[] { user.Id }
-                    };
-                    responseBuffer.Enqueue(r);
-
+                    GenerateSyncMessage(user);
                     var task = cr.SaveUserAsync(user);
                     task.ContinueWith((t) =>
                     {
@@ -214,7 +204,7 @@ namespace ws_hero.Server
         }
 
         /// <summary>
-        /// Handles incomming client requests
+        /// Handles incomming client requests.
         /// </summary>
         private void ProcessRequests()
         {
@@ -285,6 +275,24 @@ namespace ws_hero.Server
                     }
                 }
             } while (hasItems);
+        }
+
+        /// <summary>
+        /// Enqueues a sync message for the given user.
+        /// </summary>
+        /// <param name="user"></param>
+        public void GenerateSyncMessage(User user)
+        {
+            var data = Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData);
+            Response r = new Response()
+            {
+                Tick = this.tick,
+                Cid = 0,
+                Data = $"SYNC:{data}",
+                TargetKind = TargetKind.TargetList,
+                Targets = new string[] { user.Id }
+            };
+            responseBuffer.Enqueue(r);
         }
     }
 }

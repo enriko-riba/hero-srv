@@ -114,6 +114,7 @@ namespace ws_hero.sockets
                                 WebSocket = webSocket
                             };
                             connMngr.Add(connection);
+                            SimpleServer.Instance.GenerateSyncMessage(user);
                         }
                         else
                         {
