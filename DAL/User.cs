@@ -4,7 +4,7 @@
     using Newtonsoft.Json;
     using System;
 
-    public class User
+    public class User<T>
     {
         [JsonIgnore]
         public string Id { get => Email; }
@@ -19,7 +19,7 @@
 
         public bool? IsActive { get; set; }
 
-        public GameData GameData { get; set; }
+        public T GameData { get; set; }
 
         [JsonConverter(typeof(UnixDateTimeConverter))]
         [JsonProperty(PropertyName = "_ts")]

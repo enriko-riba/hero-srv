@@ -1,26 +1,26 @@
 namespace ws_hero.Server
 {
     using System;
-    using System.Linq;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
     using System.Diagnostics;
+    using System.Linq;
     using System.Threading;
     using System.Threading.Tasks;
-    using ws_hero.Messages;
     using ws_hero.DAL;
+    using ws_hero.Messages;
 
-    public class SimpleServer
+    public abstract class SimpleServer<T> where T : class, new()
     {
-        private static readonly SimpleServer singleton = new SimpleServer();
+        //private static readonly SimpleServer singleton = new SimpleServer();
 
         private ConnectionManager connMngr;
 
-        private ulong tick = 0;
+        protected ulong tick = 0;
         private bool isRunning;
         private Task mainLoopTask;
 
-        private Dictionary<string, User> players = new Dictionary<string, User>();
+        private Dictionary<string, User<T>> players = new Dictionary<string, User<T>>();
 
         //private object bufferLock = new Object();
         private Queue<RpgMessage>[] messageBuffers = new [] {new Queue<RpgMessage>(1024), new Queue<RpgMessage>(1024) };
@@ -28,15 +28,15 @@ namespace ws_hero.Server
         private int readBuffer = 1;
 
 
-        private ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
-        private CosmosRepo cr = new CosmosRepo();
+        protected ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
+        protected CosmosRepo<T> cr = new CosmosRepo<T>();
 
         public SimpleServer()
         {                    
-            connMngr = new ConnectionManager();            
-        }
+            connMngr = new ConnectionManager();
+        }       
 
-        public static SimpleServer Instance { get => singleton; }
+        //public abstract static SimpleServer Instance { get => singleton; }
 
         public ConnectionManager ConnMngr { get => connMngr; }
         
@@ -85,7 +85,7 @@ namespace ws_hero.Server
         /// </summary>
         /// <param name="user"></param>
         /// <returns></returns>
-        public async Task<User> SignInUserAsync(string email, string lastName, string firstName, string displayName, string photoUrl)
+        public async Task<User<T>> SignInUserAsync(string email, string lastName, string firstName, string displayName, string photoUrl)
         {
             var usr = await cr.GetUserAsync(email);
 
@@ -103,7 +103,7 @@ namespace ws_hero.Server
             //-------------------------
             if (usr == null) 
             {
-                usr = new User()
+                usr = new User<T>()
                 {
                     Email = email,
                     LastName = lastName,
@@ -111,7 +111,7 @@ namespace ws_hero.Server
                     DisplayName = displayName,
                     PictureURL = photoUrl,
                     IsActive = true,
-                    GameData = new GameData()
+                    GameData = new T()
                 };
                 //  TODO: implement new game data hook for initializing any game state
             }
@@ -121,11 +121,12 @@ namespace ws_hero.Server
             return usr;
         }
 
+
         /// <summary>
-        /// Enqueues a new message for dispatching.
+        /// Enqueues a RpgMessage for processing.
         /// </summary>
         /// <param name="m"></param>
-        public void AddMessage(ref RpgMessage m)
+        public void EnqueueRpgMessage(ref RpgMessage m)
         {
             this.messageBuffers[writeBuffer].Enqueue(m);
         }
@@ -146,11 +147,10 @@ namespace ws_hero.Server
             sw.Start();
 
             const int SLEEP_MILLISECONDS = 200;
-            const int SYNC_MILLISECONDS = 5000;
             long tickEnd = sw.ElapsedMilliseconds;
             long ellapsed, tickStart;
 
-            long lastStateSync = 0;
+            long lastSync = 0;
             while (IsRunning)
             {
                 tick++;
@@ -158,13 +158,14 @@ namespace ws_hero.Server
                 ellapsed = tickStart - tickEnd;
 
                 SwapBuffers();
-                ProcessRequests();
 
-                bool shouldSync = (tickStart - lastStateSync > SYNC_MILLISECONDS);
-                ProcessState(ellapsed, shouldSync);
-                if (shouldSync) lastStateSync = tickStart;
+                ProcessRpgMessages();
 
-                DispatchResponses();
+                var shouldSync = ShouldSync(tickStart, lastSync);
+                ProcessPlayerState(ellapsed, shouldSync);
+                if (shouldSync) lastSync = tickStart;
+
+                DispatchResponses();    //  TODO: make background thread & event signal on message enqueue
 
                 tickEnd = sw.ElapsedMilliseconds;
                 Thread.Sleep(SLEEP_MILLISECONDS);
@@ -174,21 +175,24 @@ namespace ws_hero.Server
         }
 
         /// <summary>
+        /// Determins if the game state should be synced to clients.
+        /// </summary>
+        /// <param name="tickStart"></param>
+        /// <param name="lastStateSync"></param>
+        /// <returns></returns>
+        protected abstract bool ShouldSync(long tickStart, long lastStateSync);
+
+        /// <summary>
         /// Processes time based game state.
         /// </summary>
         /// <param name="ellapsed"></param>
-        private void ProcessState(long ellapsed, bool shouldSync)
+        private void ProcessPlayerState(long ellapsed, bool shouldSync)
         {
             foreach(var kvp in this.players)
             {
                 var user = kvp.Value;
-                var city = user.GameData.City;
 
-                var seconds = (float)ellapsed / 1000f;
-
-                city.food += city.prodFood * seconds;
-                city.wood += city.prodWood * seconds;
-                city.stone += city.prodStone * seconds;
+                OnProcessState(kvp.Value, ellapsed, shouldSync);
 
                 //  send data to client if needed
                 if(shouldSync)
@@ -203,10 +207,14 @@ namespace ws_hero.Server
             }
         }
 
+        protected abstract void OnProcessState(User<T> user, long ellapsed, bool shouldSync);
+
+        protected abstract void OnProcessRequest(ref RpgMessage msg);
+
         /// <summary>
         /// Handles incomming client requests.
         /// </summary>
-        private void ProcessRequests()
+        private void ProcessRpgMessages()
         {
             var hasItems = false;
             do
@@ -214,40 +222,11 @@ namespace ws_hero.Server
                 hasItems = this.messageBuffers[readBuffer].TryDequeue(out RpgMessage msg);
                 if (hasItems)
                 {
-                    ProcessRequest(ref msg);
+                    OnProcessRequest(ref msg);
                 }
             } while (hasItems);
         }
-
-        private void ProcessRequest(ref RpgMessage msg)
-        {
-            Response r = new Response()
-            {
-                Tick = tick,
-                Cid = msg.Cid,
-                TargetKind = TargetKind.All
-            };
-
-            //  TODO: implement
-            switch (msg.RpgType)
-            {
-                case RpgType.NullCommand:
-                    r.Data = $"CMD {msg.RpgType}: {msg.Data}";
-                    responseBuffer.Enqueue(r);
-                    break;
-
-                case RpgType.Chat:
-                    r.Data = $"{ msg.PlayerId}: {msg.Data}";
-                    r.TargetKind = TargetKind.TargetAllExcept;
-                    r.Targets = new string[] { msg.PlayerId };
-                    responseBuffer.Enqueue(r);
-                    break;
-
-                default:
-                    break;
-            }
-        }
-
+        
         /// <summary>
         /// Sends responses to clients.
         /// </summary>
@@ -281,7 +260,7 @@ namespace ws_hero.Server
         /// Enqueues a sync message for the given user.
         /// </summary>
         /// <param name="user"></param>
-        public void GenerateSyncMessage(User user)
+        public void GenerateSyncMessage(User<T> user)
         {
             var data = Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData);
             Response r = new Response()

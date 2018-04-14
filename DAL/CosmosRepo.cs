@@ -8,7 +8,7 @@
     using System.Net;
     using System.Threading.Tasks;
 
-    public class CosmosRepo
+    public class CosmosRepo<T>
     {
         private const string endpointUri = "https://eri-test.documents.azure.com:443/";
         private const string primaryKey = "EBRpYeDhByEU9kvfQdkgqkdE68yFcBxStLb0O3jrQB2jABsCKZCLjvk2ltvjZh7cpEk0TlgxIzNf6a28v89Syw==";
@@ -26,19 +26,19 @@
             await this.client.CreateDocumentCollectionIfNotExistsAsync(UriFactory.CreateDatabaseUri(DB_ID), new DocumentCollection { Id = USERS_ID });
         }
         
-        public IEnumerable<User> GetActiveUsers()
+        public IEnumerable<User<T>> GetActiveUsers()
         {
-            var query = client.CreateDocumentQuery<User>(userCollectionLink)
+            var query = client.CreateDocumentQuery<User<T>>(userCollectionLink)
                         .Where(so => so.IsActive == true)
                         .ToArray();
             return query;                        
         }
 
-        public async Task<User> GetUserAsync(string Id)
+        public async Task<User<T>> GetUserAsync(string Id)
         {
             try
             {
-                var result = await this.client.ReadDocumentAsync<User>(UriFactory.CreateDocumentUri(DB_ID, USERS_ID, Id));
+                var result = await this.client.ReadDocumentAsync<User<T>>(UriFactory.CreateDocumentUri(DB_ID, USERS_ID, Id));
                 return result.Document;
             }
             catch (DocumentClientException de)
@@ -48,12 +48,12 @@
             return null;
         }
 
-        public async Task<User> SaveUserAsync(User user)
+        public async Task<User<T>> SaveUserAsync(User<T> user)
         {
             try
             {
                 var response = await this.client.UpsertDocumentAsync(UriFactory.CreateDocumentCollectionUri(DB_ID, USERS_ID), user);
-                user = Newtonsoft.Json.JsonConvert.DeserializeObject<User>(response.Resource.ToString());
+                user = Newtonsoft.Json.JsonConvert.DeserializeObject<User<T>>(response.Resource.ToString());
                 return user;
             }
             catch (Exception ex)
@@ -62,11 +62,11 @@
             }
         }
 
-        public async Task<User> CreateUserIfNotExistsAsync(User user)
+        public async Task<User<T>> CreateUserIfNotExistsAsync(User<T> user)
         {
             try
             {
-                var result = await this.client.ReadDocumentAsync<User>(UriFactory.CreateDocumentUri(DB_ID, USERS_ID, user.Email));
+                var result = await this.client.ReadDocumentAsync<User<T>>(UriFactory.CreateDocumentUri(DB_ID, USERS_ID, user.Email));
                 return result;
             }
             catch (DocumentClientException de)

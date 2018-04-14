@@ -11,7 +11,7 @@ namespace ws_hero.Messages
         public int Cid { get; set; }
         public string Data { get; set; }
 
-        public string v { get => "0.2"; }
+        public string v { get => "0.3"; }
 
         [JsonIgnore]
         public TargetKind TargetKind { get; set; }

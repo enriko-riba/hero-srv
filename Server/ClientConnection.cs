@@ -3,6 +3,7 @@ namespace ws_hero.Server
     using Newtonsoft.Json;
     using System;
     using System.Threading.Tasks;
+    using ws_hero.GameLogic;
     using ws_hero.Messages;
     using ws_hero.sockets;
 
@@ -11,10 +12,14 @@ namespace ws_hero.Server
         public string PlayerId { get; set; }
         public string IdToken { get; set; }
 
-
+        /// <summary>
+        /// Parses client messages, converts them to RpgMessage objects and enqueues them.
+        /// </summary>
+        /// <param name="message"></param>
+        /// <returns></returns>
         public override async Task ReceiveAsync(string message)
         {
-            var server = SimpleServer.Instance;
+            var server = GameServer.Instance;
             try
             {
                 if (!server.IsRunning)
@@ -33,12 +38,12 @@ namespace ws_hero.Server
 
                     case ClientMessageKind.Command:
                         rpgMsg = RpgMessage.FromClientMessage(PlayerId, ref clientMessage);
-                        SimpleServer.Instance.AddMessage(ref rpgMsg);
+                        server.EnqueueRpgMessage(ref rpgMsg);
                         break;
 
                     case ClientMessageKind.Chat:
                         rpgMsg = RpgMessage.FromClientMessage(PlayerId, ref clientMessage);
-                        SimpleServer.Instance.AddMessage(ref rpgMsg);
+                        server.EnqueueRpgMessage(ref rpgMsg);
                         break;
 
                     default:    //  for all other kinds

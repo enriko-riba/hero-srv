@@ -1,6 +1,6 @@
 ﻿using Newtonsoft.Json;
 
-namespace ws_hero.DAL
+namespace ws_hero.GameLogic
 {
     public class CharData
     {

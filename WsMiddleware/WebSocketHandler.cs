@@ -5,7 +5,7 @@ using System.Net.WebSockets;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using ws_hero.DAL;
+using ws_hero.GameLogic;
 using ws_hero.Server;
 
 namespace ws_hero.sockets
@@ -15,7 +15,7 @@ namespace ws_hero.sockets
         private const int BUFFER_SIZE = 1024 * 8;
 
         //  TODO: DI?
-        private ConnectionManager connMngr = SimpleServer.Instance.ConnMngr as ConnectionManager;
+        private ConnectionManager connMngr = GameServer.Instance.ConnMngr as ConnectionManager;
 
         public async Task ListenConnection(WebSocketConnection connection)
         {
@@ -102,7 +102,7 @@ namespace ws_hero.sockets
                     {
                         var tr = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken);
                         email = tr.Email;
-                        var user = await SimpleServer.Instance.SignInUserAsync(email, tr.FamilyName, tr.GivenName, tr.Name, tr.Picture);
+                        var user = await GameServer.Instance.SignInUserAsync(email, tr.FamilyName, tr.GivenName, tr.Name, tr.Picture);
 
                         if(user!=null)
                         {
@@ -114,7 +114,7 @@ namespace ws_hero.sockets
                                 WebSocket = webSocket
                             };
                             connMngr.Add(connection);
-                            SimpleServer.Instance.GenerateSyncMessage(user);
+                            GameServer.Instance.GenerateSyncMessage(user);
                         }
                         else
                         {

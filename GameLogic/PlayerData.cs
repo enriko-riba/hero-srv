@@ -1,8 +1,8 @@
-﻿namespace ws_hero.DAL
+﻿namespace ws_hero.GameLogic
 {
-    public class GameData
+    public class PlayerData 
     {
-        public GameData()
+        public PlayerData()
         {
             City = new City();
             CharData = new CharData();

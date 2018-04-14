@@ -3,7 +3,7 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using System;
-using ws_hero.Server;
+using ws_hero.GameLogic;
 using ws_hero.sockets;
 
 namespace my_hero
@@ -34,7 +34,7 @@ namespace my_hero
             app.UseMvcWithDefaultRoute();
             app.UseWebSockets();
             app.MapWebSocketManager("/srv", serviceProvider.GetService<WebSocketHandler>());
-            SimpleServer.Instance.Start();
+            GameServer.Instance.Start();
         }
     }
 }
