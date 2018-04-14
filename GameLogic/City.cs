@@ -4,7 +4,7 @@
     {
         public City()
         {
-            this.production = new Production();
+            this.production = new Resources();
             production.wood = 1f;
             production.food = 1f;
             production.stone = 1f;
@@ -19,7 +19,7 @@
         /// <summary>
         /// Bbase production in units/level
         /// </summary>
-        public Production production { get; set; }
+        public Resources production { get; set; }
 
         public Building[] buildings { get; set; }
     }

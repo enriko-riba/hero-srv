@@ -3,24 +3,42 @@
     "Id": 1,
     "Type": 0,
     "Name": "Farm",
+    "BuildTime": 10,
     "Production": {
       "food": 1
+    },
+    "Cost": {
+      "food": 10,
+      "wood": 50,
+      "stone":  1
     }
   },
   {
     "Id": 2,
     "Type": 1,
     "Name": "Woodcutter's Hut",
+    "BuildTime": 15,
     "Production": {
       "wood": 1
+    },
+    "Cost": {
+      "food": 50,
+      "wood": 10,
+      "stone": 10
     }
   },
   {
     "Id": 3,
     "Type": 3,
     "Name": "Small quarry",
+    "BuildTime": 20,
     "Production": {
       "stone": 1
+    },
+    "Cost": {
+      "food": 50,
+      "wood": 50,
+      "stone": 10
     }
   }
 ]

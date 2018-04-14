@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.IO;
-using System.Reflection;
-using ws_hero.DAL;
+﻿using ws_hero.DAL;
 using ws_hero.Messages;
 using ws_hero.Server;
 
@@ -16,15 +13,9 @@ namespace ws_hero.GameLogic
 
         public GameServer()
         {
-            Initialize();
         }
 
-        private void Initialize()
-        {
-            var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
-            var name = Path.Combine(path, "Buildings.json");
-            var buildingTemplates = JsonConvert.DeserializeObject<BuildingTemplate[]>(File.ReadAllText(name));
-        }
+       
 
         protected override bool ShouldSync(long tickStart, long lastStateSync) => (tickStart - lastStateSync > SYNC_MILLISECONDS);
 
