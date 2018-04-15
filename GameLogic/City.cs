@@ -4,17 +4,21 @@
     {
         public City()
         {
-            this.production = new Resources();
-            production.wood = 1f;
-            production.food = 1f;
-            production.stone = 1f;
+            this.resources = new Resources();
+            this.production = new Resources()
+            {
+                wood = 1f,
+                food = 1f,
+                stone = 1f
+            };
 
             this.buildings = new Building[10];
         }
 
-        public float wood { get; set; }
-        public float food { get; set; }
-        public float stone { get; set; }
+        /// <summary>
+        /// Available resources.
+        /// </summary>
+        public Resources resources { get; set; }
 
         /// <summary>
         /// Bbase production in units/level

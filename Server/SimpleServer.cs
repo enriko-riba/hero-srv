@@ -188,11 +188,11 @@ namespace ws_hero.Server
         /// <param name="ellapsed"></param>
         private void ProcessPlayerState(long ellapsed, bool shouldSync)
         {
-            foreach(var kvp in this.players)
+            var keys = this.players.Keys.ToArray();
+            foreach (var key in keys)
             {
-                var user = kvp.Value;
-
-                OnProcessState(kvp.Value, ellapsed, shouldSync);
+                var user = this.players[key];
+                OnProcessState(user, ellapsed, shouldSync);
 
                 //  send data to client if needed
                 if(shouldSync)
@@ -257,21 +257,10 @@ namespace ws_hero.Server
         }
 
         /// <summary>
-        /// Enqueues a sync message for the given user.
+        /// Generates and enqueues a sync message for the given user.
         /// </summary>
         /// <param name="user"></param>
-        public void GenerateSyncMessage(User<T> user)
-        {
-            var data = Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData);
-            Response r = new Response()
-            {
-                Tick = this.tick,
-                Cid = 0,
-                Data = $"SYNC:{data}",
-                TargetKind = TargetKind.TargetList,
-                Targets = new string[] { user.Id }
-            };
-            responseBuffer.Enqueue(r);
-        }
+        public abstract void GenerateSyncMessage(User<T> user);
+        
     }
 }

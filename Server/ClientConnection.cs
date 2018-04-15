@@ -27,29 +27,7 @@ namespace ws_hero.Server
                     await SendMessageAsync("ERROR: SERVER DOWN");
                     return;
                 }
-
-                RpgMessage rpgMsg;
-                var clientMessage = JsonConvert.DeserializeObject<ClientMessage>(message);
-                switch (clientMessage.Kind)
-                {
-                    case ClientMessageKind.System:
-                        await SendMessageAsync("ERROR: UNSUPPORTED TYPE");
-                        break;
-
-                    case ClientMessageKind.Command:
-                        rpgMsg = RpgMessage.FromClientMessage(PlayerId, ref clientMessage);
-                        server.EnqueueRpgMessage(ref rpgMsg);
-                        break;
-
-                    case ClientMessageKind.Chat:
-                        rpgMsg = RpgMessage.FromClientMessage(PlayerId, ref clientMessage);
-                        server.EnqueueRpgMessage(ref rpgMsg);
-                        break;
-
-                    default:    //  for all other kinds
-                        await SendMessageAsync("ERROR: UNSUPPORTED FORMAT");
-                        break;
-                }
+                await server.ParseClientMessage(this, message);                
             }
             catch (Exception ex)
             {

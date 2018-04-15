@@ -83,51 +83,51 @@ namespace ws_hero.sockets
                 //-------------------------------
                 //  remove stale connections
                 //-------------------------------
-                if (connection != null && connection.WebSocket.State != WebSocketState.Open)
+                if (connection != null)
                 {
+                    if (connection.WebSocket.State != WebSocketState.Open)
+                    {
+                        await connection.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "new connection accepted!", CancellationToken.None);
+                    }
+
                     connMngr.Remove(connection);
                     connection = null;
                 }
 
-                //------------------------------------
-                //  create new connection if needed
-                //------------------------------------
-                if (connection == null)
+                //-------------------------------
+                //  verify google id_token
+                //-------------------------------
+                string email;
+                try
                 {
-                    //-------------------------------
-                    //  verify google id_token
-                    //-------------------------------
-                    string email;
-                    try
-                    {
-                        var tr = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken);
-                        email = tr.Email;
-                        var user = await GameServer.Instance.SignInUserAsync(email, tr.FamilyName, tr.GivenName, tr.Name, tr.Picture);
+                    var tr = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken);
+                    email = tr.Email;
+                    var user = await GameServer.Instance.SignInUserAsync(email, tr.FamilyName, tr.GivenName, tr.Name, tr.Picture);
 
-                        if(user!=null)
-                        {
-                            var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                            connection = new ClientConnection()
-                            {
-                                PlayerId = email,
-                                IdToken = idToken,
-                                WebSocket = webSocket
-                            };
-                            connMngr.Add(connection);
-                            GameServer.Instance.GenerateSyncMessage(user);
-                        }
-                        else
-                        {
-                            context.Response.StatusCode = 403;
-                            return null;
-                        }
-                    }
-                    catch (Exception ex)
+                    if (user != null)
                     {
-                        Console.WriteLine(ex);
-                        context.Response.StatusCode = 401;
+                        var webSocket = await context.WebSockets.AcceptWebSocketAsync();
+                        connection = new ClientConnection()
+                        {
+                            PlayerId = email,
+                            IdToken = idToken,
+                            WebSocket = webSocket
+                        };
+                        connMngr.Add(connection);
+                        GameServer.Instance.GenerateWorldInitMessage(user);
+                        GameServer.Instance.GenerateSyncMessage(user);
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = 403;
                         return null;
                     }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex);
+                    context.Response.StatusCode = 401;
+                    return null;
                 }
                 return connection;
             }

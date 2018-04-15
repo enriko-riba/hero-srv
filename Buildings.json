@@ -1,41 +1,41 @@
 ﻿[
   {
-    "Id": 1,
-    "Type": 0,
-    "Name": "Farm",
-    "BuildTime": 10,
-    "Production": {
+    "id": 1,
+    "type": 0,
+    "name": "Farm",
+    "buildTime": 10,
+    "production": {
       "food": 1
     },
-    "Cost": {
+    "cost": {
       "food": 10,
       "wood": 50,
       "stone":  1
     }
   },
   {
-    "Id": 2,
-    "Type": 1,
-    "Name": "Woodcutter's Hut",
-    "BuildTime": 15,
-    "Production": {
+    "id": 2,
+    "type": 1,
+    "name": "Woodcutter's Hut",
+    "buildTime": 15,
+    "production": {
       "wood": 1
     },
-    "Cost": {
+    "cost": {
       "food": 50,
       "wood": 10,
       "stone": 10
     }
   },
   {
-    "Id": 3,
-    "Type": 3,
-    "Name": "Small quarry",
-    "BuildTime": 20,
-    "Production": {
+    "id": 3,
+    "type": 3,
+    "name": "Small quarry",
+    "buildTime": 20,
+    "production": {
       "stone": 1
     },
-    "Cost": {
+    "cost": {
       "food": 50,
       "wood": 50,
       "stone": 10
