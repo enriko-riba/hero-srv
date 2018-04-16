@@ -87,7 +87,14 @@ namespace ws_hero.sockets
                 {
                     if (connection.WebSocket.State == WebSocketState.Open)
                     {
-                        await connection.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "new connection accepted!", CancellationToken.None);
+                        try
+                        {
+                            await connection.WebSocket.CloseAsync(WebSocketCloseStatus.NormalClosure, "new connection accepted!", CancellationToken.None);
+                        }
+                        catch(Exception ex)
+                        {
+                            Console.WriteLine(ex.Message);
+                        }
                     }
 
                     connMngr.Remove(connection);
