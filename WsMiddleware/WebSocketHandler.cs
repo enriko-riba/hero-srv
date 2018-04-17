@@ -121,8 +121,7 @@ namespace ws_hero.sockets
                             WebSocket = webSocket
                         };
                         connMngr.Add(connection);
-                        GameServer.Instance.GenerateWorldInitMessage(user);
-                        GameServer.Instance.GenerateSyncMessage(user);
+                        GameServer.Instance.ConnectionAdded(user);                        
                     }
                     else
                     {

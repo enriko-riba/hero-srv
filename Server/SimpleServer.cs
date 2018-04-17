@@ -12,34 +12,23 @@ namespace ws_hero.Server
 
     public abstract class SimpleServer<T> where T : class, new()
     {
-        //private static readonly SimpleServer singleton = new SimpleServer();
-
-        private ConnectionManager connMngr;
-
-        protected ulong tick = 0;
+        private ConnectionManager connMngr = new ConnectionManager();
         private bool isRunning;
         private Task mainLoopTask;
-
         private Dictionary<string, User<T>> players = new Dictionary<string, User<T>>();
-
-        //private object bufferLock = new Object();
         private Queue<RpgMessage>[] messageBuffers = new [] {new Queue<RpgMessage>(1024), new Queue<RpgMessage>(1024) };
         private int writeBuffer = 0;
         private int readBuffer = 1;
 
-
         protected ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
         protected CosmosRepo<T> cr = new CosmosRepo<T>();
-
-        public SimpleServer()
-        {                    
-            connMngr = new ConnectionManager();
-        }       
-
-        //public abstract static SimpleServer Instance { get => singleton; }
+        protected ulong tick = 0;
 
         public ConnectionManager ConnMngr { get => connMngr; }
         
+        /// <summary>
+        /// Returns true if the server is running.
+        /// </summary>
         public bool IsRunning { get => isRunning; private set => isRunning = value; }
 
         /// <summary>
@@ -79,7 +68,6 @@ namespace ws_hero.Server
             Console.WriteLine("Server stopped!");
         }
 
-
         /// <summary>
         /// Updates or inserts the given user.
         /// </summary>
@@ -88,15 +76,6 @@ namespace ws_hero.Server
         public async Task<User<T>> SignInUserAsync(string email, string lastName, string firstName, string displayName, string photoUrl)
         {
             var usr = await cr.GetUserAsync(email);
-
-            //-------------------------
-            //  bail out if inactive
-            //-------------------------
-            if (usr!=null && !usr.IsActive.Value)
-            {
-                this.players.Remove(usr.Id);
-                return null;
-            }
 
             //-------------------------
             //  init new users
@@ -115,12 +94,19 @@ namespace ws_hero.Server
                 };
                 //  TODO: implement new game data hook for initializing any game state
             }
+            else if(!usr.IsActive.Value)
+            {
+                //-------------------------
+                //  bail out inactive
+                //-------------------------
+                this.players.Remove(usr.Id);
+                return null;
+            }
 
             usr = await cr.SaveUserAsync(usr);
             this.players[usr.Id] = usr;
             return usr;
         }
-
 
         /// <summary>
         /// Enqueues a RpgMessage for processing.
@@ -132,47 +118,16 @@ namespace ws_hero.Server
         }
 
         /// <summary>
-        /// Swaps the msgBuff1 and msgBuff2.
+        /// Add all player init logic here.
         /// </summary>
-        private void SwapBuffers()
-        {
-            writeBuffer = ++writeBuffer % 2;
-            readBuffer = ++readBuffer % 2;
-        }
+        /// <param name="user"></param>
+        public abstract void ConnectionAdded(User<T> user);
 
-        private void MainLoop()
-        {
-            Console.WriteLine("Main loop started");
-            var sw = new Stopwatch();
-            sw.Start();
-
-            const int SLEEP_MILLISECONDS = 200;
-            long tickEnd = sw.ElapsedMilliseconds;
-            long ellapsed, tickStart;
-
-            long lastSync = 0;
-            while (IsRunning)
-            {
-                tick++;
-                tickStart = sw.ElapsedMilliseconds;
-                ellapsed = tickStart - tickEnd;
-
-                SwapBuffers();
-
-                ProcessRpgMessages();
-
-                var shouldSync = ShouldSync(tickStart, lastSync);
-                ProcessPlayerState(ellapsed, shouldSync);
-                if (shouldSync) lastSync = tickStart;
-
-                DispatchResponses();    //  TODO: make background thread & event signal on message enqueue
-
-                tickEnd = sw.ElapsedMilliseconds;
-                Thread.Sleep(SLEEP_MILLISECONDS);
-            }
-
-            Console.WriteLine("Main loop ended");
-        }
+        /// <summary>
+        /// Generates and enqueues a sync message for the given user.
+        /// </summary>
+        /// <param name="user"></param>
+        protected abstract void GenerateSyncMessage(User<T> user);
 
         /// <summary>
         /// Determins if the game state should be synced to clients.
@@ -181,6 +136,10 @@ namespace ws_hero.Server
         /// <param name="lastStateSync"></param>
         /// <returns></returns>
         protected abstract bool ShouldSync(long tickStart, long lastStateSync);
+
+        protected abstract void OnProcessState(User<T> user, long ellapsed, bool shouldSync);
+
+        protected abstract void OnProcessRequest(ref RpgMessage msg);
 
         /// <summary>
         /// Processes time based game state.
@@ -206,10 +165,6 @@ namespace ws_hero.Server
                 }             
             }
         }
-
-        protected abstract void OnProcessState(User<T> user, long ellapsed, bool shouldSync);
-
-        protected abstract void OnProcessRequest(ref RpgMessage msg);
 
         /// <summary>
         /// Handles incomming client requests.
@@ -257,10 +212,49 @@ namespace ws_hero.Server
         }
 
         /// <summary>
-        /// Generates and enqueues a sync message for the given user.
+        /// Swaps the read & write buffers.
         /// </summary>
-        /// <param name="user"></param>
-        public abstract void GenerateSyncMessage(User<T> user);
-        
+        private void SwapBuffers()
+        {
+            writeBuffer = ++writeBuffer % 2;
+            readBuffer = ++readBuffer % 2;
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        private void MainLoop()
+        {
+            Console.WriteLine("Main loop started");
+            var sw = new Stopwatch();
+            sw.Start();
+
+            const int SLEEP_MILLISECONDS = 200;
+            long tickEnd = sw.ElapsedMilliseconds;
+            long ellapsed, tickStart;
+
+            long lastSync = 0;
+            while (IsRunning)
+            {
+                tick++;
+                tickStart = sw.ElapsedMilliseconds;
+                ellapsed = tickStart - tickEnd;
+
+                SwapBuffers();
+
+                ProcessRpgMessages();
+
+                var shouldSync = ShouldSync(tickStart, lastSync);
+                ProcessPlayerState(ellapsed, shouldSync);
+                if (shouldSync) lastSync = tickStart;
+
+                DispatchResponses();    //  TODO: make background thread & event signal on message enqueue
+
+                tickEnd = sw.ElapsedMilliseconds;
+                Thread.Sleep(SLEEP_MILLISECONDS);
+            }
+
+            Console.WriteLine("Main loop ended");
+        }
     }
 }

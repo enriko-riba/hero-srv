@@ -1,17 +1,13 @@
-﻿namespace ws_hero.GameLogic
+﻿using System;
+
+namespace ws_hero.GameLogic
 {
     public class City
     {
         public City()
         {
             this.resources = new Resources();
-            this.production = new Resources()
-            {
-                wood = 1f,
-                food = 1f,
-                stone = 1f
-            };
-
+            this.production = new Resources();
             this.buildings = new Building[10];
         }
 
@@ -21,10 +17,30 @@
         public Resources resources { get; set; }
 
         /// <summary>
-        /// Bbase production in units/level
+        /// Base production in units/level
         /// </summary>
         public Resources production { get; set; }
 
         public Building[] buildings { get; set; }
+
+        internal void RecalculateProduction()
+        {
+            const float baseFood = 1f;
+            const float baseWood = 0.5f;
+            const float baseStone = 0.2f;
+
+            production.food = baseFood;
+            production.wood = baseWood;
+            production.stone = baseStone;
+            foreach (var b in buildings)
+            {
+                if (b != null)
+                {
+                    production.food += b.Production.food * b.Level;
+                    production.wood += b.Production.wood * b.Level;
+                    production.stone += b.Production.stone * b.Level;
+                }
+            }
+        }
     }
 }

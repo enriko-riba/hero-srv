@@ -131,6 +131,13 @@ namespace ws_hero.GameLogic
             }
         }
 
+        public override void ConnectionAdded(User<PlayerData> user)
+        {
+            user.GameData.City.RecalculateProduction();
+            GenerateWorldInitMessage(user);
+            GenerateSyncMessage(user);
+        }
+
         public void GenerateWorldInitMessage(User<PlayerData> user)
         {
             var o = new
@@ -148,13 +155,13 @@ namespace ws_hero.GameLogic
                 Targets = new string[] { user.Id }
             };
             responseBuffer.Enqueue(r);
-        }
+        }       
 
         /// <summary>
         /// Enqueues a sync message for the given user.
         /// </summary>
         /// <param name="user"></param>
-        public override void GenerateSyncMessage(User<PlayerData> user)
+        protected override void GenerateSyncMessage(User<PlayerData> user)
         {
             var data = Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData);
             Response r = new Response()
