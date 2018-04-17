@@ -1,4 +1,5 @@
 ﻿using Newtonsoft.Json;
+using System;
 
 namespace ws_hero.GameLogic
 {
@@ -12,6 +13,12 @@ namespace ws_hero.GameLogic
         public string Name { get; set; }
         [JsonProperty("type")]
         public BuildingType Type { get; set; }
+
+        /// <summary>
+        /// Time in milliseconds needed to complete bulding.
+        /// </summary>
+        [JsonProperty("buildTimeLeft")]
+        public int BuildTimeLeft { get; set; }
 
         /// <summary>
         /// Build time in seconds.
