@@ -4,6 +4,7 @@ namespace ws_hero.Messages
     {
         NullCommand,
         Login,
-        Chat
+        Chat,
+        StartBuilding = 10
     }
 }

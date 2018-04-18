@@ -34,7 +34,7 @@
 
         public static IEnumerable<Building> GetBuildings() => buildingsList.Values;
        
-        public static Building CreateBuilding(int id)
+        public static Building GetBuilding(int id)
         {
             var t = buildingsList[id];
             return new Building()

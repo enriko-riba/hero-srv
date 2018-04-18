@@ -137,9 +137,9 @@ namespace ws_hero.Server
         /// <returns></returns>
         protected abstract bool ShouldSync(long tickStart, long lastStateSync);
 
-        protected abstract void OnProcessState(User<T> user, long ellapsed, bool shouldSync);
+        protected abstract void OnProcessState(T userData, long ellapsed, bool shouldSync);
 
-        protected abstract void OnProcessRequest(ref RpgMessage msg);
+        protected abstract void OnProcessRequest(T userData, ref RpgMessage msg);
 
         /// <summary>
         /// Processes time based game state.
@@ -151,7 +151,7 @@ namespace ws_hero.Server
             foreach (var key in keys)
             {
                 var user = this.players[key];
-                OnProcessState(user, ellapsed, shouldSync);
+                OnProcessState(user.GameData, ellapsed, shouldSync);
 
                 //  send data to client if needed
                 if(shouldSync)
@@ -177,7 +177,7 @@ namespace ws_hero.Server
                 hasItems = this.messageBuffers[readBuffer].TryDequeue(out RpgMessage msg);
                 if (hasItems)
                 {
-                    OnProcessRequest(ref msg);
+                    OnProcessRequest(this.players[msg.PlayerId].GameData, ref msg);
                 }
             } while (hasItems);
         }

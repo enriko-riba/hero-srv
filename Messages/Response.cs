@@ -8,6 +8,7 @@ namespace ws_hero.Messages
     public struct Response
     {
         public ulong Tick { get; set; }
+        public long Created { get; set; }
         public int Cid { get; set; }
         public string Data { get; set; }
 
