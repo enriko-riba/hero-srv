@@ -52,9 +52,10 @@
         {
             try
             {
-                Console.WriteLine("SaveUserAsync() {0}", Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData) );
+                //Console.WriteLine("SaveUserAsync() {0}", Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData) );
                 var response = await this.client.UpsertDocumentAsync(UriFactory.CreateDocumentCollectionUri(DB_ID, USERS_ID), user);
                 user = Newtonsoft.Json.JsonConvert.DeserializeObject<User<T>>(response.Resource.ToString());
+                user.LastSync = DateTime.Now;
                 return user;
             }
             catch (Exception ex)

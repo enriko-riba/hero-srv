@@ -1,10 +1,11 @@
 namespace ws_hero.Messages
 {
-    public enum ClientMessageKind
+    public enum MessageKind
     {
         Invalid,
         System,
         Command,
-        Chat
+        StartBuilding = 10,
+        Chat = 1024
     }
 }

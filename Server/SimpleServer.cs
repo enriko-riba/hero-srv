@@ -141,24 +141,25 @@ namespace ws_hero.Server
         /// <returns></returns>
         protected abstract bool ShouldSync(long tickStart, long lastStateSync);
 
-        protected abstract void OnProcessState(T userData, long ellapsed, bool shouldSync);
+        protected abstract void OnProcessState(User<T> user, int ellapsedMilliseconds);
 
-        protected abstract void OnProcessRequest(T userData, ref RpgMessage msg);
+        protected abstract void OnProcessRequest(User<T> user, ref RpgMessage msg);
 
         /// <summary>
         /// Processes time based game state.
         /// </summary>
-        /// <param name="ellapsed"></param>
-        private void ProcessPlayerState(long ellapsed, bool shouldSync)
+        /// <param name="ellapsedMilliseconds"></param>
+        private void ProcessPlayerState(int ellapsedMilliseconds)
         {
             var keys = this.players.Keys.ToArray();
             foreach (var key in keys)
             {
                 var user = this.players[key];
-                OnProcessState(user.GameData, ellapsed, shouldSync);
+                OnProcessState(user, ellapsedMilliseconds);
 
                 //  send data to client if needed
-                if(shouldSync)
+                const int SYNC_INTERVAL = 5000;
+                if (user.LastSync.AddMilliseconds(SYNC_INTERVAL) < DateTime.Now)
                 {
                     GenerateSyncMessage(user);
                     var task = cr.SaveUserAsync(user);
@@ -182,7 +183,7 @@ namespace ws_hero.Server
                 hasItems = this.messageBuffers[readBuffer].TryDequeue(out RpgMessage msg);
                 if (hasItems)
                 {
-                    OnProcessRequest(this.players[msg.PlayerId].GameData, ref msg);
+                    OnProcessRequest(this.players[msg.PlayerId], ref msg);
                 }
             } while (hasItems);
         }
@@ -236,22 +237,17 @@ namespace ws_hero.Server
 
             const int SLEEP_MILLISECONDS = 200;
             long tickEnd = sw.ElapsedMilliseconds;
-            long ellapsed, tickStart;
-
-            long lastSync = 0;
+            long tickStart;
+            int ellapsed;
             while (IsRunning)
             {
                 tick++;
                 tickStart = sw.ElapsedMilliseconds;
-                ellapsed = tickStart - tickEnd;
+                ellapsed = (int)(tickStart - tickEnd);
 
                 SwapBuffers();
-
                 ProcessRpgMessages();
-
-                var shouldSync = ShouldSync(tickStart, lastSync);
-                ProcessPlayerState(ellapsed, shouldSync);
-                if (shouldSync) lastSync = tickStart;
+                ProcessPlayerState(ellapsed);
 
                 DispatchResponses();    //  TODO: make background thread & event signal on message enqueue
 

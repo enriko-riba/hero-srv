@@ -41,6 +41,6 @@ namespace ws_hero.GameLogic
         /// <summary>
         /// Returns build cost for next level.
         /// </summary>
-        public Resources BuildCost { get => Cost * (Level + 1); }
+        public Resources UpgradeCost { get => Cost * (Level + 1); }
     }   
 }

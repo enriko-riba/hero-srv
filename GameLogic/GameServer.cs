@@ -1,40 +1,57 @@
-﻿using Newtonsoft.Json;
-using System;
-using System.Threading.Tasks;
-using ws_hero.DAL;
-using ws_hero.Messages;
-using ws_hero.Server;
-
-namespace ws_hero.GameLogic
+﻿namespace ws_hero.GameLogic
 {
+    using Newtonsoft.Json;
+    using System;
+    using System.Collections.Generic;
+    using System.Linq;
+    using System.Threading.Tasks;
+    using ws_hero.DAL;
+    using ws_hero.Messages;
+    using ws_hero.Server;
+
     public class GameServer : SimpleServer<PlayerData>
     {
         private const int SYNC_MILLISECONDS = 5000;
-
         private static readonly GameServer singleton = new GameServer();
         public static GameServer Instance { get => singleton; }
 
-        public GameServer()
-        {
-        }
-
-       
+        private List<int> finishedBuidlings = new List<int>(10);
 
         protected override bool ShouldSync(long tickStart, long lastStateSync) => (tickStart - lastStateSync > SYNC_MILLISECONDS);
 
-        protected override void OnProcessState(PlayerData pd, long ellapsed, bool shouldSync)
+        protected override void OnProcessState(User<PlayerData> user, int ellapsedMilliseconds)
         {
+            //------------------------------------
+            //  calc resource production
+            //------------------------------------
+            var seconds = (float)ellapsedMilliseconds / 1000f;
+            var city = user.GameData.City;
+            city.resources += city.production * seconds;
 
-            var city = pd.City;
-
-            var seconds = (float)ellapsed / 1000f;
-
-            city.resources.food += city.production.food * seconds;
-            city.resources.wood += city.production.wood * seconds;
-            city.resources.stone += city.production.stone * seconds;
+            //------------------------------------
+            //  handle buildings
+            //------------------------------------
+            finishedBuidlings.Clear();
+            for (int i = 0; i< city.buildings.Length; i++)
+            {
+                var b = city.buildings[i];
+                if (b != null && b.BuildTimeLeft > 0)
+                {
+                    b.BuildTimeLeft -= ellapsedMilliseconds;
+                    if(b.BuildTimeLeft <= 0)
+                    {
+                        b.BuildTimeLeft = 0;
+                        finishedBuidlings.Add(i);
+                    }
+                }
+            }
+            if ( finishedBuidlings.Any())
+            {
+                //  TODO: send user array of finished building slots
+            }
         }
 
-        protected override void OnProcessRequest(PlayerData pd, ref RpgMessage msg)
+        protected override void OnProcessRequest(User<PlayerData> user, ref RpgMessage msg)
         {
             Response r = new Response()
             {
@@ -45,22 +62,22 @@ namespace ws_hero.GameLogic
             };
 
             //  TODO: implement
-            switch (msg.RpgType)
+            switch (msg.Kind)
             {
-                case RpgType.NullCommand:
+                case MessageKind.Command:
                     r.TargetKind = TargetKind.TargetList;
                     r.Targets = new string[] { msg.PlayerId };
-                    r.Data = $"CMD {msg.RpgType}: {msg.Data}";
+                    r.Data = $"CMD {msg.Kind}: {msg.Data}";
                     break;
 
-                case RpgType.Chat:
+                case MessageKind.Chat:
                     r.Data = $"{ msg.PlayerId}: {msg.Data}";
                     r.TargetKind = TargetKind.TargetAllExcept;
                     r.Targets = new string[] { msg.PlayerId };
                     break;
 
-                case RpgType.StartBuilding:
-                    r = ProcessStartBuilding(pd, ref msg);
+                case MessageKind.StartBuilding:
+                    r = ProcessStartBuilding(user.GameData, ref msg);
                     break;
                 default:
                     break;
@@ -80,7 +97,7 @@ namespace ws_hero.GameLogic
             {
                 return CreateErrorResponse(ref msg, "StartBuilding: Invalid building id");
             }
-            if(pd.City.buildings[index] != null)
+            if (pd.City.buildings[index] != null)
             {
                 return CreateErrorResponse(ref msg, "StartBuilding: slot not empty");
             }
@@ -98,12 +115,13 @@ namespace ws_hero.GameLogic
             pd.City.resources -= building.Cost;
             pd.City.buildings[index] = building;
             building.BuildTimeLeft = building.BuildTime * 1000;
-            var data = JsonConvert.SerializeObject(new {
+            var data = JsonConvert.SerializeObject(new
+            {
                 slot = index,
                 building = building
             });
             var r = CreateResponse(ref msg);
-            r.Data = $"CMDR:{(int)RpgType.StartBuilding}{data}";
+            r.Data = $"CMDR:{(int)MessageKind.StartBuilding}|{data}";
             return r;
         }
         #endregion
@@ -124,68 +142,58 @@ namespace ws_hero.GameLogic
 
         private Response CreateErrorResponse(ref RpgMessage msg, string error)
         {
-            Response r = CreateResponse(ref msg);           
+            Response r = CreateResponse(ref msg);
             r.Data = error;
             return r;
         }
 
-        private RpgMessage ParseCommand(ref ClientMessage cm, string playerId)
+        /// <summary>
+        /// Validates structure and parameters of individual messages.
+        /// </summary>
+        /// <param name="cm"></param>
+        /// <param name="playerId"></param>
+        /// <returns></returns>
+        private RpgMessage ConvertToRpgMessage(ref ClientMessage cm, string playerId)
         {
-            //  TODO: define data structure, parse cmd, parse payload
-            var msg = new RpgMessage()
+            var rpgMsg = new RpgMessage()
             {
                 PlayerId = playerId,
                 Cid = cm.Cid,
                 ClientTime = cm.Created,
+                Kind = cm.Kind,
+                Data = cm.Data
             };
-
-            var cmd = cm.Data.Substring(0, 2);
-            if (int.TryParse(cmd, out int code))
+            switch(cm.Kind)
             {
-                var type = (RpgType)code;
-                msg.RpgType = type;
-                msg.Data = cm.Data.Substring(2);
-                return msg;
+                case MessageKind.StartBuilding:
+                    //  TODO: parse out request data
+                    break;
+                case MessageKind.Chat:
+                    //  TODO: parse out request data
+                    break;
+
+                default: throw new Exception("INVALID CODE");
             }
-            throw new Exception("INVALID CODE");
-        }
-
-        private RpgMessage ParseChat(ref ClientMessage cm, string playerId)
-        {
-            var msg = new RpgMessage()
-            {
-                PlayerId = playerId,
-                Cid = cm.Cid,
-                ClientTime = cm.Created,
-                Data = cm.Data,
-                RpgType = RpgType.Chat
-            };
-            return msg;
+            return rpgMsg;            
         }
 
         public async Task ParseClientMessage(ClientConnection cc, string message)
         {
-            RpgMessage rpgMsg;
             var clientMessage = JsonConvert.DeserializeObject<ClientMessage>(message);
-            switch (clientMessage.Kind)
+            if (clientMessage.Kind <= MessageKind.Command)
             {
-                case ClientMessageKind.System:
-                    await cc.SendMessageAsync("ERROR: UNSUPPORTED TYPE");
-                    break;
-
-                case ClientMessageKind.Command:
-                    rpgMsg = ParseCommand(ref clientMessage, cc.PlayerId);
-                    EnqueueRpgMessage(ref rpgMsg);
-                    break;
-
-                case ClientMessageKind.Chat:
-                    rpgMsg = ParseChat(ref clientMessage, cc.PlayerId);
-                    EnqueueRpgMessage(ref rpgMsg);
-                    break;
-
-                default:    //  for all other kinds
-                    await cc.SendMessageAsync("ERROR: UNSUPPORTED FORMAT");
-                    break;
+                await cc.SendMessageAsync("ERROR: UNSUPPORTED TYPE");
+                return;
+            }
+            else if (clientMessage.Kind > MessageKind.Chat)
+            {
+                await cc.SendMessageAsync("ERROR: UNSUPPORTED TYPE");
+                return;
+            }
+            else
+            { 
+                var rpgMsg = ConvertToRpgMessage(ref clientMessage, cc.PlayerId);
+                EnqueueRpgMessage(ref rpgMsg);
             }
         }
 
@@ -213,7 +221,7 @@ namespace ws_hero.GameLogic
                 Targets = new string[] { user.Id }
             };
             responseBuffer.Enqueue(r);
-        }       
+        }
 
         /// <summary>
         /// Enqueues a sync message for the given user.
@@ -221,7 +229,8 @@ namespace ws_hero.GameLogic
         /// <param name="user"></param>
         protected override void GenerateSyncMessage(User<PlayerData> user)
         {
-            var data = Newtonsoft.Json.JsonConvert.SerializeObject(user.GameData);
+            //  TODO: do not enqueue if user is not connected (maybe add connection to user)
+            var data = JsonConvert.SerializeObject(user.GameData);
             Response r = new Response()
             {
                 Tick = this.tick,
@@ -231,6 +240,7 @@ namespace ws_hero.GameLogic
                 Targets = new string[] { user.Id }
             };
             responseBuffer.Enqueue(r);
+            user.LastSync = DateTime.Now;
         }
         #endregion
     }

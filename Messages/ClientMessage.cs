@@ -4,7 +4,7 @@
     {
         public long Created { get; set; }
         public int Cid { get; set; }
-        public ClientMessageKind Kind { get; set; }
+        public MessageKind Kind { get; set; }
         public string Data { get; set; }
     }
 }

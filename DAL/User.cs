@@ -25,6 +25,13 @@
         [JsonProperty(PropertyName = "_ts")]
         public DateTime LastActivity { get; set; }
 
+        /// <summary>
+        /// Last time server synced the player.
+        /// For server side use only, not serialized.
+        /// </summary>
+        [JsonIgnore]
+        public DateTime LastSync { get; set; }
+
         public override string ToString()
         {
             return JsonConvert.SerializeObject(this);
