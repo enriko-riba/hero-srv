@@ -29,7 +29,7 @@
   },
   {
     "id": 3,
-    "type": 3,
+    "type": 2,
     "name": "Small quarry",
     "buildTime": 20,
     "production": {
