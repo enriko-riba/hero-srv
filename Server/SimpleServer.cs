@@ -103,7 +103,11 @@ namespace ws_hero.Server
                 return null;
             }
 
-            usr = await cr.SaveUserAsync(usr);
+            if(players[usr.Id]!=null)
+            {
+                usr = players[usr.Id];
+            }
+            usr = await cr.SaveUserAsync(usr); // TODO: rethink last login timestamp. This save() is only to trigger _ts property update which is mapped into User.LastLogin
             this.players[usr.Id] = usr;
             return usr;
         }
@@ -160,6 +164,7 @@ namespace ws_hero.Server
                     var task = cr.SaveUserAsync(user);
                     task.ContinueWith((t) =>
                     {
+                        Console.WriteLine("ContinueWith() {0}", Newtonsoft.Json.JsonConvert.SerializeObject(t.Result.GameData));
                         this.players[t.Result.Id] = t.Result;
                     });
                 }             

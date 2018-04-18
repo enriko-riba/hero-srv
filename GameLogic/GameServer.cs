@@ -103,7 +103,7 @@ namespace ws_hero.GameLogic
                 building = building
             });
             var r = CreateResponse(ref msg);
-            r.Data = $"CMDR:{RpgType.StartBuilding}{data}";
+            r.Data = $"CMDR:{(int)RpgType.StartBuilding}{data}";
             return r;
         }
         #endregion
