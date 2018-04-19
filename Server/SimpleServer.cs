@@ -93,7 +93,8 @@ namespace ws_hero.Server
                     IsActive = true,
                     GameData = new T()
                 };
-                //  TODO: implement new game data hook for initializing any game state
+
+                OnNewUserAdded(usr);
             }
             else if(!usr.IsActive.Value)
             {
@@ -153,6 +154,9 @@ namespace ws_hero.Server
         protected abstract void OnProcessRequest(User<T> user, ref RpgMessage msg);
 
         protected abstract void OnUserLoaded(User<T> user);
+
+        protected abstract void OnNewUserAdded(User<T> user);
+
         /// <summary>
         /// Processes time based game state.
         /// </summary>

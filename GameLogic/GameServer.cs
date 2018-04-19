@@ -92,6 +92,13 @@
             user.GameData.City.RecalculateProduction();
         }
 
+        protected override void OnNewUserAdded(User<PlayerData> user)
+        {
+            user.GameData.City.resources.food = 50;
+            user.GameData.City.resources.wood = 50;
+            user.GameData.City.resources.stone = 10;
+        }
+
         #region Actions
         private Response ProcessStartBuilding(PlayerData pd, ref RpgMessage msg)
         {
