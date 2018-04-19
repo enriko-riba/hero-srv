@@ -7,5 +7,6 @@
         Quarry,
         //Hunter,
         //LumberMill,
+        Storage
     }
 }

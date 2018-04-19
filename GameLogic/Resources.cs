@@ -6,6 +6,14 @@
         public float food { get; set; }
         public float stone { get; set; }
 
+        public override string ToString() => $"F: {food}, W: {wood}, S: {stone}";
+
+        public void Clamp(int cap)
+        {
+            if (food > cap) food = cap;
+            if (wood > cap) wood = cap;
+            if (stone > cap) stone = cap;
+        }
         public static Resources operator *(Resources res, int amount)
         {
             return new Resources()

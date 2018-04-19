@@ -27,6 +27,7 @@
             var seconds = (float)ellapsedMilliseconds / 1000f;
             var city = user.GameData.City;
             city.resources += city.production * seconds;
+            city.resources.Clamp(city.StorageCap);
 
             //------------------------------------
             //  handle buildings
