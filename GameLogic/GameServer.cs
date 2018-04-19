@@ -47,6 +47,7 @@
             }
             if ( finishedBuidlings.Any())
             {
+                city.RecalculateProduction();
                 //  TODO: send user array of finished building slots
             }
         }
@@ -83,6 +84,11 @@
                     break;
             }
             responseBuffer.Enqueue(r);
+        }
+
+        protected override void OnUserLoaded(User<PlayerData> user)
+        {
+            user.GameData.City.RecalculateProduction();
         }
 
         #region Actions
@@ -177,6 +183,25 @@
             return rpgMsg;            
         }
 
+        public void GenerateWorldInitMessage(User<PlayerData> user)
+        {
+            var o = new
+            {
+                BuildingData = DataFactory.GetBuildings(),
+                ItemData = DataFactory.GetItems()
+            };
+            var data = Newtonsoft.Json.JsonConvert.SerializeObject(o);
+            Response r = new Response()
+            {
+                Tick = this.tick,
+                Cid = 0,
+                Data = $"WINI:{data}",
+                TargetKind = TargetKind.TargetList,
+                Targets = new string[] { user.Id }
+            };
+            responseBuffer.Enqueue(r);
+        }
+
         public async Task ParseClientMessage(ClientConnection cc, string message)
         {
             var clientMessage = JsonConvert.DeserializeObject<ClientMessage>(message);
@@ -204,24 +229,6 @@
             GenerateSyncMessage(user);
         }
 
-        public void GenerateWorldInitMessage(User<PlayerData> user)
-        {
-            var o = new
-            {
-                BuildingData = DataFactory.GetBuildings(),
-                ItemData = DataFactory.GetItems()
-            };
-            var data = Newtonsoft.Json.JsonConvert.SerializeObject(o);
-            Response r = new Response()
-            {
-                Tick = this.tick,
-                Cid = 0,
-                Data = $"WINI:{data}",
-                TargetKind = TargetKind.TargetList,
-                Targets = new string[] { user.Id }
-            };
-            responseBuffer.Enqueue(r);
-        }
 
         /// <summary>
         /// Enqueues a sync message for the given user.

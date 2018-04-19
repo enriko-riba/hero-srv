@@ -44,6 +44,7 @@ namespace ws_hero.Server
             foreach (var u in userList)
             {
                 this.players.Add(u.Id, u);
+                OnUserLoaded(u);
             }
 
             SwapBuffers();
@@ -145,6 +146,7 @@ namespace ws_hero.Server
 
         protected abstract void OnProcessRequest(User<T> user, ref RpgMessage msg);
 
+        protected abstract void OnUserLoaded(User<T> user);
         /// <summary>
         /// Processes time based game state.
         /// </summary>
