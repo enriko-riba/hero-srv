@@ -104,7 +104,7 @@ namespace ws_hero.Server
                 return null;
             }
 
-            if(players[usr.Id]!=null)
+            if(players.ContainsKey(usr.Id))
             {
                 usr = players[usr.Id];
             }
