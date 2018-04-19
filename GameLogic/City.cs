@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using Newtonsoft.Json;
+using System.Linq;
 
 namespace ws_hero.GameLogic
 {
@@ -26,11 +27,11 @@ namespace ws_hero.GameLogic
         /// <summary>
         /// Max resource storage.
         /// </summary>
-        public int StorageCap { get; private set; }
+        public int storageCap { get; private set; }
 
         internal void RecalculateProduction()
         {
-            StorageCap = 1000;  //  base cap
+            storageCap = 1000;  //  base cap
 
             const float baseFood = 1f;
             const float baseWood = 0.5f;
@@ -48,9 +49,9 @@ namespace ws_hero.GameLogic
                     production.stone += b.Production.stone * b.Level;
 
                     if (b.Type == BuildingType.Storage)
-                        StorageCap += (b.Level * 2000);
+                        storageCap += (b.Level * 2000);
                     else
-                        StorageCap += (b.Level * 200);
+                        storageCap += (b.Level * 200);
                 }
             }
         }
