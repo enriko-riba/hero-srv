@@ -30,7 +30,14 @@
         /// For server side use only, not serialized.
         /// </summary>
         [JsonIgnore]
-        public DateTime LastSync { get; set; }
+        public DateTime LastSync { get; set; } = DateTime.MinValue;
+
+        /// <summary>
+        /// Last time the player is saved to DB.
+        /// For server side use only, not serialized.
+        /// </summary>
+        [JsonIgnore]
+        public DateTime LastSave { get; set; } = DateTime.MinValue;
 
         public override string ToString()
         {

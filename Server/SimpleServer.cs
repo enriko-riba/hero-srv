@@ -166,17 +166,21 @@ namespace ws_hero.Server
                 OnProcessState(user, ellapsedMilliseconds);
 
                 //  send data to client if needed
-                const int SYNC_INTERVAL = 5000;
+                const int SYNC_INTERVAL = 2000;
                 if (user.LastSync.AddMilliseconds(SYNC_INTERVAL) < DateTime.Now)
+                    GenerateSyncMessage(user);                    
+
+                //  save data to DB
+                const int SAVE_INTERVAL = 15000;
+                if (user.LastSave.AddMilliseconds(SAVE_INTERVAL) < DateTime.Now)
                 {
-                    GenerateSyncMessage(user);
                     var task = cr.SaveUserAsync(user);
                     //task.ContinueWith((t) =>
                     //{
                     //    Console.WriteLine("ContinueWith() {0}", Newtonsoft.Json.JsonConvert.SerializeObject(t.Result.GameData));
                     //    this.players[t.Result.Id] = t.Result;
                     //});
-                }             
+                }
             }
         }
 
