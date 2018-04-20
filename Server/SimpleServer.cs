@@ -16,7 +16,7 @@ namespace ws_hero.Server
         private bool isRunning;
         private Task mainLoopTask;
         private Dictionary<string, User<T>> players = new Dictionary<string, User<T>>();
-        private Queue<RpgMessage>[] messageBuffers = new [] {new Queue<RpgMessage>(1024), new Queue<RpgMessage>(1024) };
+        private Queue<RpgMessage>[] messageBuffers = new[] { new Queue<RpgMessage>(1024), new Queue<RpgMessage>(1024) };
         private int writeBuffer = 0;
         private int readBuffer = 1;
 
@@ -25,7 +25,7 @@ namespace ws_hero.Server
         protected ulong tick = 0;
 
         public ConnectionManager ConnMngr { get => connMngr; }
-        
+
         /// <summary>
         /// Returns true if the server is running.
         /// </summary>
@@ -81,7 +81,7 @@ namespace ws_hero.Server
             //-------------------------
             //  init new users
             //-------------------------
-            if (usr == null) 
+            if (usr == null)
             {
                 usr = new User<T>()
                 {
@@ -96,7 +96,7 @@ namespace ws_hero.Server
 
                 OnNewUserAdded(usr);
             }
-            else if(!usr.IsActive.Value)
+            else if (!usr.IsActive.Value)
             {
                 //-------------------------
                 //  bail out inactive
@@ -166,24 +166,26 @@ namespace ws_hero.Server
             var keys = this.players.Keys.ToArray();
             foreach (var key in keys)
             {
-                var user = this.players[key];
-                OnProcessState(user, ellapsedMilliseconds);
-
-                //  send data to client if needed
-                const int SYNC_INTERVAL = 2000;
-                if (user.LastSync.AddMilliseconds(SYNC_INTERVAL) < DateTime.Now)
-                    GenerateSyncMessage(user);                    
-
-                //  save data to DB
-                const int SAVE_INTERVAL = 15000;
-                if (user.LastSave.AddMilliseconds(SAVE_INTERVAL) < DateTime.Now)
+                try
                 {
-                    var task = cr.SaveUserAsync(user);
-                    //task.ContinueWith((t) =>
-                    //{
-                    //    Console.WriteLine("ContinueWith() {0}", Newtonsoft.Json.JsonConvert.SerializeObject(t.Result.GameData));
-                    //    this.players[t.Result.Id] = t.Result;
-                    //});
+                    var user = this.players[key];
+                    OnProcessState(user, ellapsedMilliseconds);
+
+                    //  send data to client if needed
+                    const int SYNC_INTERVAL = 2000;
+                    if (user.LastSync.AddMilliseconds(SYNC_INTERVAL) < DateTime.Now)
+                        GenerateSyncMessage(user);
+
+                    //  save data to DB
+                    const int SAVE_INTERVAL = 15000;
+                    if (user.LastSave.AddMilliseconds(SAVE_INTERVAL) < DateTime.Now)
+                    {
+                        var task = cr.SaveUserAsync(user);                        
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine(ex.Message);
                 }
             }
         }
@@ -203,7 +205,7 @@ namespace ws_hero.Server
                 }
             } while (hasItems);
         }
-        
+
         /// <summary>
         /// Sends responses to clients.
         /// </summary>

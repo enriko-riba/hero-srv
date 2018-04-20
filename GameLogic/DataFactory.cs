@@ -40,7 +40,7 @@
             return new Building()
             {
                 Id = id,
-                Level = 1,
+                Level = 0,
                 Name = t.Name,
                 Type = t.Type,
                 BuildTime = t.BuildTime,
@@ -57,7 +57,7 @@
                     stone = t.Cost.stone
                 }
             };
-        }
+        }              
         #endregion
     }
 }

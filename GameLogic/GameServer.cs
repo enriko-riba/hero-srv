@@ -32,10 +32,11 @@
             //------------------------------------
             //  handle buildings
             //------------------------------------
+            Building b;
             finishedBuidlings.Clear();
             for (int i = 0; i< city.buildings.Length; i++)
             {
-                var b = city.buildings[i];
+                b = city.buildings[i];
                 if (b != null && b.BuildTimeLeft > 0)
                 {
                     b.BuildTimeLeft -= ellapsedMilliseconds;
@@ -46,10 +47,17 @@
                     }
                 }
             }
-            if ( finishedBuidlings.Any())
+            
+            //  do we have finished buildings?
+            if (finishedBuidlings.Any())
             {
+                foreach(var i in finishedBuidlings)
+                {
+                    b = city.buildings[i];
+                    b.Level++;
+                }
                 city.RecalculateProduction();
-                //  TODO: send user array of finished building slots
+                user.LastSync = DateTime.MinValue;  //  this forces sync message dispatch to the user
             }
         }
 
@@ -81,6 +89,11 @@
                 case MessageKind.StartBuilding:
                     r = ProcessStartBuilding(user.GameData, ref msg);
                     break;
+
+                case MessageKind.StartBuildingUpgrade:
+                    r = ProcessStartBuildingUpgrade(user.GameData, ref msg);
+                    break;
+
                 default:
                     break;
             }
@@ -100,6 +113,51 @@
         }
 
         #region Actions
+        private Response ProcessStartBuildingUpgrade(PlayerData pd, ref RpgMessage msg)
+        {
+            var cmdData = msg.Data.Split("|");
+            if (!int.TryParse(cmdData[0], out int index))
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: invalid slot index");
+            }
+            if (!int.TryParse(cmdData[1], out int buildingId))
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: invalid building id");
+            }
+            if (pd.City.buildings[index] == null)
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: slot is empty");
+            }
+            if (pd.City.buildings[index].Id != buildingId)
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: building id mismatch");
+            }
+            if (pd.City.buildings[index].BuildTimeLeft > 0)
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: already upgrading");
+            }
+            // check resources
+            var building = pd.City.buildings[index];            
+            var isOk = building.UpgradeCost.food <= pd.City.resources.food &&
+                       building.UpgradeCost.wood <= pd.City.resources.wood &&
+                       building.UpgradeCost.stone <= pd.City.resources.stone;
+            if (!isOk)
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: no resources");
+            }
+
+            pd.City.resources -= building.UpgradeCost;
+            pd.City.buildings[index] = building;
+            building.BuildTimeLeft = building.BuildTime * 1000 * (1 + building.Level);
+            var data = JsonConvert.SerializeObject(new
+            {
+                slot = index,
+                building = building
+            });
+            var r = CreateResponse(ref msg);
+            r.Data = $"CMDR:{(int)MessageKind.StartBuildingUpgrade}|{data}";
+            return r;
+        }
         private Response ProcessStartBuilding(PlayerData pd, ref RpgMessage msg)
         {
             var cmdData = msg.Data.Split("|");
@@ -180,10 +238,10 @@
             switch(cm.Kind)
             {
                 case MessageKind.StartBuilding:
-                    //  TODO: parse out request data
+                    break;
+                case MessageKind.StartBuildingUpgrade:
                     break;
                 case MessageKind.Chat:
-                    //  TODO: parse out request data
                     break;
 
                 default: throw new Exception("INVALID CODE");
