@@ -148,7 +148,7 @@
 
             pd.City.resources -= building.UpgradeCost;
             pd.City.buildings[index] = building;
-            building.BuildTimeLeft = building.BuildTime * 1000 * (1 + building.Level);
+            building.BuildTimeLeft = building.UpgradeTime;
             var data = JsonConvert.SerializeObject(new
             {
                 slot = index,
@@ -186,7 +186,7 @@
 
             pd.City.resources -= building.Cost;
             pd.City.buildings[index] = building;
-            building.BuildTimeLeft = building.BuildTime * 1000;
+            building.BuildTimeLeft = building.UpgradeTime;
             var data = JsonConvert.SerializeObject(new
             {
                 slot = index,

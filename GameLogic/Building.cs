@@ -43,5 +43,11 @@ namespace ws_hero.GameLogic
         /// </summary>
         [JsonProperty("upgradeCost")]
         public Resources UpgradeCost { get => Cost * (Level + 1); }
+
+        /// <summary>
+        /// Returns the upgrade time in milliseconds.
+        /// </summary>
+        [JsonProperty("upgradeTime")]
+        public int UpgradeTime { get => BuildTime * 1000 * (Level + 1); }
     }   
 }
