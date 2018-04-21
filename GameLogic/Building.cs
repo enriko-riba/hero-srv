@@ -51,6 +51,6 @@ namespace ws_hero.GameLogic
         /// Returns the upgrade time in milliseconds.
         /// </summary>
         [JsonProperty("upgradeTime")]
-        public int UpgradeTime { get => BuildTime * 1000 * (Level + 1); }
+        public int UpgradeTime { get => BuildTime * 1000 * (Level + 1) * 3; }
     }   
 }
