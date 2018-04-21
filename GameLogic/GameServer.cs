@@ -26,32 +26,31 @@
             //------------------------------------
             var seconds = (float)ellapsedMilliseconds / 1000f;
             var city = user.GameData.City;
-            city.resources += city.production * seconds;
-            city.resources.Clamp(city.storageCap);
+            city.resources.IncreaseWithClamp(city.production * seconds,  city.storageCap);
 
             //------------------------------------
             //  handle buildings
             //------------------------------------
             Building b;
             finishedBuidlings.Clear();
-            for (int i = 0; i< city.buildings.Length; i++)
+            for (int i = 0; i < city.buildings.Length; i++)
             {
                 b = city.buildings[i];
                 if (b != null && b.BuildTimeLeft > 0)
                 {
                     b.BuildTimeLeft -= ellapsedMilliseconds;
-                    if(b.BuildTimeLeft <= 0)
+                    if (b.BuildTimeLeft <= 0)
                     {
                         b.BuildTimeLeft = 0;
                         finishedBuidlings.Add(i);
                     }
                 }
             }
-            
+
             //  do we have finished buildings?
             if (finishedBuidlings.Any())
             {
-                foreach(var i in finishedBuidlings)
+                foreach (var i in finishedBuidlings)
                 {
                     b = city.buildings[i];
                     b.Level++;
@@ -94,6 +93,10 @@
                     r = ProcessStartBuildingUpgrade(user.GameData, ref msg);
                     break;
 
+                case MessageKind.StartBuildingDestroy:
+                    r = ProcessStartBuildingDestroy(user.GameData, ref msg);
+                    user.LastSync = DateTime.MinValue;  //  this forces sync message dispatch to the user
+                    break;
                 default:
                     break;
             }
@@ -113,6 +116,45 @@
         }
 
         #region Actions
+
+        private Response ProcessStartBuildingDestroy(PlayerData pd, ref RpgMessage msg)
+        {
+            var cmdData = msg.Data.Split("|");
+            if (!int.TryParse(cmdData[0], out int index))
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingDestroy: invalid slot index");
+            }
+            if (!int.TryParse(cmdData[1], out int buildingId))
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingDestroy: invalid building id");
+            }
+            if (pd.City.buildings[index] == null)
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingDestroy: slot is empty");
+            }
+            if (pd.City.buildings[index].Id != buildingId)
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingDestroy: building id mismatch");
+            }
+            if (pd.City.buildings[index].BuildTimeLeft > 0)
+            {
+                return CreateErrorResponse(ref msg, "StartBuildingDestroy: already upgrading");
+            }            
+
+            pd.City.resources += pd.City.buildings[index].DestroyRefund;
+            pd.City.buildings[index] = null;
+            pd.City.RecalculateProduction();            
+
+            var data = JsonConvert.SerializeObject(new
+            {
+                slot = index,
+                pd.City.resources
+            });
+            var r = CreateResponse(ref msg);
+            r.Data = $"CMDR:{(int)MessageKind.StartBuildingDestroy}|{data}";
+            return r;
+        }
+
         private Response ProcessStartBuildingUpgrade(PlayerData pd, ref RpgMessage msg)
         {
             var cmdData = msg.Data.Split("|");
@@ -137,7 +179,7 @@
                 return CreateErrorResponse(ref msg, "StartBuildingUpgrade: already upgrading");
             }
             // check resources
-            var building = pd.City.buildings[index];            
+            var building = pd.City.buildings[index];
             var isOk = building.UpgradeCost.food <= pd.City.resources.food &&
                        building.UpgradeCost.wood <= pd.City.resources.wood &&
                        building.UpgradeCost.stone <= pd.City.resources.stone;
@@ -176,15 +218,15 @@
 
             // check resources
             var building = DataFactory.GetBuilding(buildingId);
-            var isOk = building.Cost.food <= pd.City.resources.food &&
-                       building.Cost.wood <= pd.City.resources.wood &&
-                       building.Cost.stone <= pd.City.resources.stone;
+            var isOk = building.UpgradeCost.food <= pd.City.resources.food &&
+                       building.UpgradeCost.wood <= pd.City.resources.wood &&
+                       building.UpgradeCost.stone <= pd.City.resources.stone;
             if (!isOk)
             {
                 return CreateErrorResponse(ref msg, "StartBuilding: no resources");
             }
 
-            pd.City.resources -= building.Cost;
+            pd.City.resources -= building.UpgradeCost;
             pd.City.buildings[index] = building;
             building.BuildTimeLeft = building.UpgradeTime;
             var data = JsonConvert.SerializeObject(new
@@ -220,7 +262,7 @@
         }
 
         /// <summary>
-        /// Validates structure and parameters of individual messages.
+        /// Verifies that the ClientMessage.Kind is known and copies the ClientMessage into a new RpgMessage instance.
         /// </summary>
         /// <param name="cm"></param>
         /// <param name="playerId"></param>
@@ -235,18 +277,19 @@
                 Kind = cm.Kind,
                 Data = cm.Data
             };
-            switch(cm.Kind)
+            switch (cm.Kind)
             {
                 case MessageKind.StartBuilding:
                     break;
                 case MessageKind.StartBuildingUpgrade:
                     break;
+                case MessageKind.StartBuildingDestroy:
+                    break;
                 case MessageKind.Chat:
                     break;
-
                 default: throw new Exception("INVALID CODE");
             }
-            return rpgMsg;            
+            return rpgMsg;
         }
 
         public void GenerateWorldInitMessage(User<PlayerData> user)
@@ -282,7 +325,7 @@
                 return;
             }
             else
-            { 
+            {
                 var rpgMsg = ConvertToRpgMessage(ref clientMessage, cc.PlayerId);
                 EnqueueRpgMessage(ref rpgMsg);
             }

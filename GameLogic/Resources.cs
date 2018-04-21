@@ -14,6 +14,13 @@
             if (wood > cap) wood = cap;
             if (stone > cap) stone = cap;
         }
+
+        public void IncreaseWithClamp(Resources amount, int cap)
+        {
+            if (food < cap) food += amount.food;
+            if (wood < cap) wood += amount.wood;
+            if (stone < cap) stone += amount.stone;
+        }
         public static Resources operator *(Resources res, int amount)
         {
             return new Resources()
@@ -31,6 +38,16 @@
                 wood = res.wood * amount,
                 food = res.food * amount,
                 stone = res.stone * amount
+            };
+        }
+
+        public static Resources operator /(Resources res, int amount)
+        {
+            return new Resources()
+            {
+                wood = res.wood / amount,
+                food = res.food / amount,
+                stone = res.stone / amount
             };
         }
 

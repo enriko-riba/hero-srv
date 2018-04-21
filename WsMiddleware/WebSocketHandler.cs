@@ -131,8 +131,17 @@ namespace ws_hero.sockets
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex);
-                    context.Response.StatusCode = 401;
+                    Console.WriteLine(ex.Message);
+                    
+                    const string JWT= "JWT";
+                    if(ex.Message.StartsWith(JWT, StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        context.Response.StatusCode = 498;  //  INVALID TOKEN
+                    }
+                    else
+                    {
+                        context.Response.StatusCode = 401;  //  UNAUTHORIZED
+                    }
                     return null;
                 }
                 return connection;

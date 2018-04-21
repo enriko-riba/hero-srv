@@ -7,6 +7,7 @@ namespace ws_hero.Messages
         Command,
         StartBuilding = 10,
         StartBuildingUpgrade = 11,
+        StartBuildingDestroy = 12,
         Chat = 1024
     }
 }

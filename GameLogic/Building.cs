@@ -33,7 +33,7 @@ namespace ws_hero.GameLogic
         public Resources Production { get; set; }
 
         /// <summary>
-        /// Level 1 cost in units
+        /// Basic building cost, used for upgrade cost calc.
         /// </summary>
         [JsonProperty("cost")]
         public Resources Cost { get; set; }
@@ -42,7 +42,10 @@ namespace ws_hero.GameLogic
         /// Returns build cost for next level.
         /// </summary>
         [JsonProperty("upgradeCost")]
-        public Resources UpgradeCost { get => Cost * (Level + 1); }
+        public Resources UpgradeCost { get => Cost * (Level + 1) * 2; }
+
+        [JsonProperty("destroyRefund")]
+        public Resources DestroyRefund { get => UpgradeCost / 4; }
 
         /// <summary>
         /// Returns the upgrade time in milliseconds.
