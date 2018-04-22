@@ -9,9 +9,9 @@ namespace ws_hero.GameLogic
         {
             this.resources = new Resources();
             this.production = new Resources();
-            this.buildings = new Building[10];
+            this.buildings = new Building[10];            
         }
-
+        public Builder[] builders { get; set; }
         /// <summary>
         /// Available resources.
         /// </summary>
@@ -33,7 +33,7 @@ namespace ws_hero.GameLogic
         {
             storageCap = 1000;  //  base cap
 
-            const float baseFood = 1f;
+            const float baseFood = 0.5f;
             const float baseWood = 0.5f;
             const float baseStone = 0.2f;
 

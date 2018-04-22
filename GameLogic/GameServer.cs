@@ -2,6 +2,7 @@
 {
     using Newtonsoft.Json;
     using System;
+    using System.Linq;
     using System.Collections.Generic;
     using System.Linq;
     using System.Threading.Tasks;
@@ -26,7 +27,7 @@
             //------------------------------------
             var seconds = (float)ellapsedMilliseconds / 1000f;
             var city = user.GameData.City;
-            city.resources.IncreaseWithClamp(city.production * seconds,  city.storageCap);
+            city.resources.IncreaseWithClamp(city.production * seconds, city.storageCap);
 
             //------------------------------------
             //  handle buildings
@@ -39,9 +40,13 @@
                 if (b != null && b.BuildTimeLeft > 0)
                 {
                     b.BuildTimeLeft -= ellapsedMilliseconds;
+                    var builder = city.builders.First(bu => bu.slot == i);  //  find corresponding builder
+                    builder.buildTimeLeft = b.BuildTimeLeft;
                     if (b.BuildTimeLeft <= 0)
                     {
                         b.BuildTimeLeft = 0;
+                        builder.buildTimeLeft = 0;
+                        builder.slot = -1;
                         finishedBuidlings.Add(i);
                     }
                 }
@@ -87,10 +92,12 @@
 
                 case MessageKind.StartBuilding:
                     r = ProcessStartBuilding(user.GameData, ref msg);
+                    user.LastSync = DateTime.MinValue;  //  this forces sync message dispatch to the user
                     break;
 
                 case MessageKind.StartBuildingUpgrade:
                     r = ProcessStartBuildingUpgrade(user.GameData, ref msg);
+                    user.LastSync = DateTime.MinValue;  //  this forces sync message dispatch to the user
                     break;
 
                 case MessageKind.StartBuildingDestroy:
@@ -110,9 +117,17 @@
 
         protected override void OnNewUserAdded(User<PlayerData> user)
         {
-            user.GameData.City.resources.food = 50;
-            user.GameData.City.resources.wood = 50;
-            user.GameData.City.resources.stone = 10;
+            user.GameData.City.resources.food = 350;
+            user.GameData.City.resources.wood = 350;
+            user.GameData.City.resources.stone = 150;
+            user.GameData.City.buildings = new Building[10];
+            user.GameData.City.builders = new[] {
+                new Builder() {
+                    buildTimeLeft = 0,
+                    slot = -1,
+                    expires = DateTime.MaxValue
+                }
+            };
         }
 
         #region Actions
@@ -139,11 +154,11 @@
             if (pd.City.buildings[index].BuildTimeLeft > 0)
             {
                 return CreateErrorResponse(ref msg, "StartBuildingDestroy: already upgrading");
-            }            
+            }
 
             pd.City.resources += pd.City.buildings[index].DestroyRefund;
             pd.City.buildings[index] = null;
-            pd.City.RecalculateProduction();            
+            pd.City.RecalculateProduction();
 
             var data = JsonConvert.SerializeObject(new
             {
@@ -158,7 +173,7 @@
         private Response ProcessStartBuildingUpgrade(PlayerData pd, ref RpgMessage msg)
         {
             var cmdData = msg.Data.Split("|");
-            if (!int.TryParse(cmdData[0], out int index))
+            if (!int.TryParse(cmdData[0], out int slot))
             {
                 return CreateErrorResponse(ref msg, "StartBuildingUpgrade: invalid slot index");
             }
@@ -166,20 +181,20 @@
             {
                 return CreateErrorResponse(ref msg, "StartBuildingUpgrade: invalid building id");
             }
-            if (pd.City.buildings[index] == null)
+            if (pd.City.buildings[slot] == null)
             {
                 return CreateErrorResponse(ref msg, "StartBuildingUpgrade: slot is empty");
             }
-            if (pd.City.buildings[index].Id != buildingId)
+            if (pd.City.buildings[slot].Id != buildingId)
             {
                 return CreateErrorResponse(ref msg, "StartBuildingUpgrade: building id mismatch");
             }
-            if (pd.City.buildings[index].BuildTimeLeft > 0)
+            if (pd.City.buildings[slot].BuildTimeLeft > 0)
             {
                 return CreateErrorResponse(ref msg, "StartBuildingUpgrade: already upgrading");
             }
             // check resources
-            var building = pd.City.buildings[index];
+            var building = pd.City.buildings[slot];
             var isOk = building.UpgradeCost.food <= pd.City.resources.food &&
                        building.UpgradeCost.wood <= pd.City.resources.wood &&
                        building.UpgradeCost.stone <= pd.City.resources.stone;
@@ -187,14 +202,22 @@
             {
                 return CreateErrorResponse(ref msg, "StartBuildingUpgrade: no resources");
             }
+            else
+            {
+                //---------------------------
+                //  check builders
+                //---------------------------
+                if (!UseBuilder(pd, building, slot))
+                    return CreateErrorResponse(ref msg, "StartBuildingUpgrade: no builder");
+            }
 
             pd.City.resources -= building.UpgradeCost;
-            pd.City.buildings[index] = building;
+            pd.City.buildings[slot] = building;
             building.BuildTimeLeft = building.UpgradeTime;
             var data = JsonConvert.SerializeObject(new
             {
-                slot = index,
-                building = building
+                slot,
+                building
             });
             var r = CreateResponse(ref msg);
             r.Data = $"CMDR:{(int)MessageKind.StartBuildingUpgrade}|{data}";
@@ -203,40 +226,76 @@
         private Response ProcessStartBuilding(PlayerData pd, ref RpgMessage msg)
         {
             var cmdData = msg.Data.Split("|");
-            if (!int.TryParse(cmdData[0], out int index))
+            if (!int.TryParse(cmdData[0], out int slot))
             {
-                return CreateErrorResponse(ref msg, "StartBuilding: Invalid slot index");
+                return CreateErrorResponse(ref msg, "StartBuilding: Invalid slot");
             }
             if (!int.TryParse(cmdData[1], out int buildingId))
             {
                 return CreateErrorResponse(ref msg, "StartBuilding: Invalid building id");
             }
-            if (pd.City.buildings[index] != null)
+            if (pd.City.buildings[slot] != null)
             {
                 return CreateErrorResponse(ref msg, "StartBuilding: slot not empty");
             }
 
+            //---------------------------
             // check resources
+            //---------------------------
             var building = DataFactory.GetBuilding(buildingId);
             var isOk = building.UpgradeCost.food <= pd.City.resources.food &&
                        building.UpgradeCost.wood <= pd.City.resources.wood &&
                        building.UpgradeCost.stone <= pd.City.resources.stone;
+
+            
             if (!isOk)
             {
                 return CreateErrorResponse(ref msg, "StartBuilding: no resources");
             }
+            else
+            {
+                //---------------------------
+                //  check builders
+                //---------------------------
+                if(!UseBuilder(pd, building, slot))
+                    return CreateErrorResponse(ref msg, "StartBuilding: no builder");
+            }
 
             pd.City.resources -= building.UpgradeCost;
-            pd.City.buildings[index] = building;
+            pd.City.buildings[slot] = building;
             building.BuildTimeLeft = building.UpgradeTime;
             var data = JsonConvert.SerializeObject(new
             {
-                slot = index,
-                building = building
+                slot,
+                building
             });
             var r = CreateResponse(ref msg);
             r.Data = $"CMDR:{(int)MessageKind.StartBuilding}|{data}";
             return r;
+        }
+
+        /// <summary>
+        /// Uses first available builder that can finish the building.
+        /// </summary>
+        /// <param name="pd"></param>
+        /// <param name="building"></param>
+        /// <param name="slot"></param>
+        /// <returns></returns>
+        private bool UseBuilder(PlayerData pd, Building building, int slot)
+        {
+            bool hasBuilder = false;
+            for (int i = 0; i < pd.City.builders.Length; i++)
+            {
+                if (pd.City.builders[i].buildTimeLeft <= 0 &&
+                   pd.City.builders[i].expires >= DateTime.Now.AddMilliseconds(building.UpgradeTime))
+                {
+                    hasBuilder = true;
+                    pd.City.builders[i].slot = slot;
+                    pd.City.builders[i].buildTimeLeft = building.UpgradeTime;
+                    break;
+                }
+            }
+            return hasBuilder;
         }
         #endregion
 
