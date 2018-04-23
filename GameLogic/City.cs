@@ -1,7 +1,4 @@
-﻿using Newtonsoft.Json;
-using System.Linq;
-
-namespace ws_hero.GameLogic
+﻿namespace ws_hero.GameLogic
 {
     public class City
     {
@@ -9,7 +6,7 @@ namespace ws_hero.GameLogic
         {
             this.resources = new Resources();
             this.production = new Resources();
-            this.buildings = new Building[10];            
+            this.buildings = new Building[20];            
         }
         public Builder[] builders { get; set; }
         /// <summary>
@@ -31,7 +28,7 @@ namespace ws_hero.GameLogic
 
         internal void RecalculateProduction()
         {
-            storageCap = 1000;  //  base cap
+            storageCap = 4000;  //  base cap
 
             const float baseFood = 0.5f;
             const float baseWood = 0.5f;
@@ -42,16 +39,17 @@ namespace ws_hero.GameLogic
             production.stone = baseStone;
             foreach (var b in buildings)
             {
-                if (b != null && b.Level > 0)
+                if (b != null && b.Level > 0 && b.BuildTimeLeft <= 0)
                 {
                     production.food += b.Production.food * b.Level;
                     production.wood += b.Production.wood * b.Level;
                     production.stone += b.Production.stone * b.Level;
 
-                    if (b.Type == BuildingType.Storage)
-                        storageCap += (b.Level * 2000);
-                    else
-                        storageCap += (b.Level * 200);
+                    storageCap += b.Storage;
+                    //if (b.Type == BuildingType.Storage)
+                    //    storageCap += (b.Level * 2500);
+                    //else
+                    //    storageCap += (b.Level * 500);
                 }
             }
         }

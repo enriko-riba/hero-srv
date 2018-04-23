@@ -39,10 +39,16 @@ namespace ws_hero.GameLogic
         public Resources Cost { get; set; }
 
         /// <summary>
+        /// The storage capacity of this building.
+        /// </summary>
+        [JsonProperty("storage")]
+        public int Storage { get; set; }
+
+        /// <summary>
         /// Returns build cost for next level.
         /// </summary>
         [JsonProperty("upgradeCost")]
-        public Resources UpgradeCost { get => Cost * (Level + 1) * 2; }
+        public Resources UpgradeCost { get => Cost * (Level + 1) * 4; }
 
         [JsonProperty("destroyRefund")]
         public Resources DestroyRefund { get => UpgradeCost / 4; }

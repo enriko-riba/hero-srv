@@ -120,7 +120,7 @@
             user.GameData.City.resources.food = 350;
             user.GameData.City.resources.wood = 350;
             user.GameData.City.resources.stone = 150;
-            user.GameData.City.buildings = new Building[10];
+            user.GameData.City.buildings = new Building[20];
             user.GameData.City.builders = new[] {
                 new Builder() {
                     buildTimeLeft = 0,

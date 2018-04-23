@@ -37,6 +37,7 @@
         public static Building GetBuilding(int id)
         {
             var t = buildingsList[id];
+            t.Production = t.Production ?? new Resources();
             return new Building()
             {
                 Id = id,
@@ -55,7 +56,8 @@
                     food = t.Cost.food,
                     wood = t.Cost.wood,
                     stone = t.Cost.stone
-                }
+                },
+                Storage = t.Storage
             };
         }              
         #endregion

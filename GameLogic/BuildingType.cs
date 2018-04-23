@@ -5,8 +5,8 @@
         Farm,
         WoodCutter,
         Quarry,
+        Storage
         //Hunter,
         //LumberMill,
-        Storage
     }
 }

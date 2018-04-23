@@ -11,7 +11,8 @@
       "food": 40,
       "wood": 150,
       "stone": 20
-    }
+    },
+    "storage": 500
   },
   {
     "id": 2,
@@ -25,7 +26,8 @@
       "food": 150,
       "wood": 30,
       "stone": 30
-    }
+    },
+    "storage": 500
   },
   {
     "id": 3,
@@ -39,6 +41,19 @@
       "food": 150,
       "wood": 150,
       "stone": 10
-    }
+    },
+    "storage": 500
+  },
+  {
+    "id": 4,
+    "type": 3,
+    "name": "Small storage",
+    "buildTime": 90,    
+    "cost": {
+      "food": 250,
+      "wood": 250,
+      "stone": 100
+    },
+    "storage": 5000
   }
 ]
