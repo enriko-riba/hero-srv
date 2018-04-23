@@ -135,7 +135,7 @@
         private Response ProcessStartBuildingDestroy(PlayerData pd, ref RpgMessage msg)
         {
             var cmdData = msg.Data.Split("|");
-            if (!int.TryParse(cmdData[0], out int index))
+            if (!int.TryParse(cmdData[0], out int slot))
             {
                 return CreateErrorResponse(ref msg, "StartBuildingDestroy: invalid slot index");
             }
@@ -143,26 +143,26 @@
             {
                 return CreateErrorResponse(ref msg, "StartBuildingDestroy: invalid building id");
             }
-            if (pd.City.buildings[index] == null)
+            if (pd.City.buildings[slot] == null)
             {
                 return CreateErrorResponse(ref msg, "StartBuildingDestroy: slot is empty");
             }
-            if (pd.City.buildings[index].Id != buildingId)
+            if (pd.City.buildings[slot].Id != buildingId)
             {
                 return CreateErrorResponse(ref msg, "StartBuildingDestroy: building id mismatch");
             }
-            if (pd.City.buildings[index].BuildTimeLeft > 0)
+            if (pd.City.buildings[slot].BuildTimeLeft > 0)
             {
                 return CreateErrorResponse(ref msg, "StartBuildingDestroy: already upgrading");
             }
 
-            pd.City.resources += pd.City.buildings[index].DestroyRefund;
-            pd.City.buildings[index] = null;
+            pd.City.resources += pd.City.buildings[slot].DestroyRefund;
+            pd.City.buildings[slot] = null;
             pd.City.RecalculateProduction();
 
             var data = JsonConvert.SerializeObject(new
             {
-                slot = index,
+                slot,
                 pd.City.resources
             });
             var r = CreateResponse(ref msg);
