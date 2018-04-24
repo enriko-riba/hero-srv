@@ -7,7 +7,7 @@
             "type": "process",
             "args": [
                 "build",
-                "${workspaceFolder}/my-hero.csproj"
+                "${workspaceFolder}/ws-hero-srv.csproj"
             ],
             "problemMatcher": "$msCompile"
         }

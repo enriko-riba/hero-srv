@@ -10,7 +10,7 @@
             "type": "coreclr",
             "request": "launch",
             "preLaunchTask": "build",
-            "program": "${workspaceFolder}/bin/Debug/netcoreapp2.0/my-hero.dll",
+            "program": "${workspaceFolder}/bin/Debug/netcoreapp2.0/ws-hero-srv.dll",
             "args": [],
             "cwd": "${workspaceFolder}",
             "stopAtEntry": false,
