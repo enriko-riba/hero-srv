@@ -11,7 +11,7 @@
 
     public class GameServer : SimpleServer<PlayerData>
     {
-        private const int SYNC_MILLISECONDS = 5000;
+        private const int SYNC_MILLISECONDS = 15000;
         private static readonly GameServer singleton = new GameServer();
         public static GameServer Instance { get => singleton; }
 
