@@ -46,10 +46,6 @@
                     production.stone += b.Production.stone * b.Level;
 
                     storageCap += b.Storage * b.Level;
-                    //if (b.Type == BuildingType.Storage)
-                    //    storageCap += (b.Level * 2500);
-                    //else
-                    //    storageCap += (b.Level * 500);
                 }
             }
         }
