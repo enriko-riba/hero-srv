@@ -315,7 +315,7 @@
         private Response CreateErrorResponse(ref RpgMessage msg, string error)
         {
             Response r = CreateResponse(ref msg);
-            r.Data = error;
+            r.Data = $"ERR :{(int)MessageKind.Invalid}|\"{error}\"";
             return r;
         }
 
