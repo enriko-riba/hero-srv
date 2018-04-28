@@ -1,5 +1,6 @@
 namespace ws_hero.Server
 {
+    using Microsoft.Extensions.Logging;
     using System;
     using System.Collections.Concurrent;
     using System.Collections.Generic;
@@ -23,8 +24,15 @@ namespace ws_hero.Server
         protected ConcurrentQueue<Response> responseBuffer = new ConcurrentQueue<Response>();
         protected CosmosRepo<T> cr = new CosmosRepo<T>();
         protected ulong tick = 0;
+        protected readonly ILogger logger;
 
         public ConnectionManager ConnMngr { get => connMngr; }
+
+        public SimpleServer(ILogger logger)
+        {
+            this.logger = logger;
+        }
+
 
         /// <summary>
         /// Returns true if the server is running.

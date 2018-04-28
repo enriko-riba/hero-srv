@@ -8,12 +8,15 @@
     using ws_hero.DAL;
     using ws_hero.Messages;
     using ws_hero.Server;
+    using Microsoft.Extensions.Logging;
 
     public class GameServer : SimpleServer<PlayerData>
     {
+        public GameServer(ILogger<GameServer> logger) : base(logger){}
+
         private const int SYNC_MILLISECONDS = 15000;
-        private static readonly GameServer singleton = new GameServer();
-        public static GameServer Instance { get => singleton; }
+        //private static readonly GameServer singleton = new GameServer();
+        // public static GameServer Instance { get => singleton; }
 
         private List<int> finishedBuidlings = new List<int>(10);
 

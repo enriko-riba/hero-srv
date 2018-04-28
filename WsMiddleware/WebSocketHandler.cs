@@ -15,7 +15,14 @@ namespace ws_hero.sockets
         private const int BUFFER_SIZE = 1024 * 8;
 
         //  TODO: DI?
-        private ConnectionManager connMngr = GameServer.Instance.ConnMngr as ConnectionManager;
+        private ConnectionManager connMngr;
+        private readonly GameServer srv;
+
+        public WebSocketHandler(GameServer srv)
+        {
+            this.srv = srv;
+            connMngr = srv.ConnMngr as ConnectionManager;
+        }
 
         public async Task ListenConnection(WebSocketConnection connection)
         {
@@ -109,19 +116,19 @@ namespace ws_hero.sockets
                 {
                     var tr = await Google.Apis.Auth.GoogleJsonWebSignature.ValidateAsync(idToken);
                     email = tr.Email;
-                    var user = await GameServer.Instance.SignInUserAsync(email, tr.FamilyName, tr.GivenName, tr.Name, tr.Picture);
+                    var user = await srv.SignInUserAsync(email, tr.FamilyName, tr.GivenName, tr.Name, tr.Picture);
 
                     if (user != null)
                     {
                         var webSocket = await context.WebSockets.AcceptWebSocketAsync();
-                        connection = new ClientConnection()
+                        connection = new ClientConnection(srv)
                         {
                             PlayerId = email,
                             IdToken = idToken,
                             WebSocket = webSocket
                         };
                         connMngr.Add(connection);
-                        GameServer.Instance.ConnectionAdded(user);                        
+                        srv.ConnectionAdded(user);                        
                     }
                     else
                     {

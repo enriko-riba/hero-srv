@@ -9,6 +9,12 @@ namespace ws_hero.Server
 
     public class ClientConnection : WebSocketConnection
     {
+        private readonly GameServer srv;
+        public ClientConnection(GameServer srv)
+        {
+            this.srv = srv;
+        }
+
         public string PlayerId { get; set; }
         public string IdToken { get; set; }
 
@@ -19,15 +25,14 @@ namespace ws_hero.Server
         /// <returns></returns>
         public override async Task ReceiveAsync(string message)
         {
-            var server = GameServer.Instance;
             try
             {
-                if (!server.IsRunning)
+                if (!srv.IsRunning)
                 {
                     await SendMessageAsync("ERROR: SERVER DOWN");
                     return;
                 }
-                await server.ParseClientMessage(this, message);                
+                await srv.ParseClientMessage(this, message);                
             }
             catch (Exception ex)
             {

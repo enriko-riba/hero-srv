@@ -22,10 +22,11 @@ namespace my_hero
         {
             services.AddMvc();
             services.AddWebSocketManager();
+            services.AddSingleton<GameServer>();
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
-        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider)
+        public void Configure(IApplicationBuilder app, IHostingEnvironment env, IServiceProvider serviceProvider, IApplicationLifetime appLifetime)
         {
             if (env.IsDevelopment())
             {
@@ -34,7 +35,13 @@ namespace my_hero
             app.UseMvcWithDefaultRoute();
             app.UseWebSockets();
             app.MapWebSocketManager("/srv", serviceProvider.GetService<WebSocketHandler>());
-            GameServer.Instance.Start();
+
+            appLifetime.ApplicationStarted.Register(async () =>
+            {
+                Microsoft.ApplicationInsights.Extensibility.TelemetryConfiguration.Active.DisableTelemetry = true;
+                GameServer srv = app.ApplicationServices.GetService<GameServer>();
+                await srv.Start();
+            });
         }
     }
 }
