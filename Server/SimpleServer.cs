@@ -46,7 +46,7 @@ namespace ws_hero.Server
         {
             if (IsRunning) throw new Exception("Already running");
 
-            Console.WriteLine("Starting server...");
+            logger.LogWarning("Starting server...");
             await cr.InitAsync();
             var userList = cr.GetActiveUsers();
             foreach (var u in userList)
@@ -58,7 +58,7 @@ namespace ws_hero.Server
             SwapBuffers();
             IsRunning = true;
             mainLoopTask = Task.Run((Action)MainLoop);
-            Console.WriteLine("server started!");
+            logger.LogWarning("server started!");
         }
 
         /// <summary>
@@ -66,7 +66,7 @@ namespace ws_hero.Server
         /// </summary>
         public void Stop()
         {
-            Console.WriteLine("Stopping server...");
+            logger.LogWarning("Stopping server...");
             IsRunning = false;
             if (this.mainLoopTask != null)
             {
@@ -74,7 +74,7 @@ namespace ws_hero.Server
                 this.mainLoopTask.Wait();
                 Console.WriteLine("loop thread terminated.");
             }
-            Console.WriteLine("Server stopped!");
+            logger.LogWarning("Server stopped!");
         }
 
         /// <summary>
@@ -84,6 +84,7 @@ namespace ws_hero.Server
         /// <returns></returns>
         public async Task<User<T>> SignInUserAsync(string email, string lastName, string firstName, string displayName, string photoUrl)
         {
+            logger.LogInformation("user: {0}, email: {1}", displayName, email);
             var usr = await cr.GetUserAsync(email);
 
             //-------------------------
@@ -109,6 +110,7 @@ namespace ws_hero.Server
                 //-------------------------
                 //  bail out inactive
                 //-------------------------
+                logger.LogInformation("user: {0} - {1} is inactive!", displayName, email);
                 this.players.Remove(usr.Id);
                 return null;
             }

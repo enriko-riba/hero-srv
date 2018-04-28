@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Linq;
 using System.Net.WebSockets;
@@ -14,12 +15,13 @@ namespace ws_hero.sockets
     {
         private const int BUFFER_SIZE = 1024 * 8;
 
-        //  TODO: DI?
         private ConnectionManager connMngr;
         private readonly GameServer srv;
+        private readonly ILogger logger;
 
-        public WebSocketHandler(GameServer srv)
+        public WebSocketHandler(GameServer srv, ILogger<WebSocketHandler> logger)
         {
+            this.logger = logger;
             this.srv = srv;
             connMngr = srv.ConnMngr as ConnectionManager;
         }
@@ -49,12 +51,12 @@ namespace ws_hero.sockets
                     }
                     catch (Exception ex)
                     {
-                        Console.WriteLine(ex.Message);
+                        logger.LogWarning(ex, ex.Message);
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    logger.LogWarning(ex, ex.Message);
                 }
             }
         }
@@ -75,7 +77,7 @@ namespace ws_hero.sockets
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
+                    logger.LogWarning(ex, ex.Message);
                 }
             }
         }
@@ -132,14 +134,15 @@ namespace ws_hero.sockets
                     }
                     else
                     {
+                        logger.LogInformation("Invalid or missing token");
                         context.Response.StatusCode = 403;
                         return null;
                     }
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine(ex.Message);
-                    
+                    logger.LogWarning(ex, ex.Message);
+
                     const string JWT= "JWT";
                     if(ex.Message.StartsWith(JWT, StringComparison.InvariantCultureIgnoreCase))
                     {
