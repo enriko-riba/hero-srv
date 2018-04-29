@@ -15,10 +15,12 @@
         #region static
         private static Dictionary<int, Building> buildingsList = new Dictionary<int, Building>();
         private static Dictionary<int, Item> itemsList = new Dictionary<int, Item>();
+        private static Dictionary<string, Kingdom> kingdomsList = new Dictionary<string, Kingdom>();
 
         private static void Initialize()
         {
             var path = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location);
+
             var name = Path.Combine(path, "Buildings.json");
             var bTemp = JsonConvert.DeserializeObject<Building[]>(File.ReadAllText(name));
             foreach (var bt in bTemp)
@@ -28,7 +30,14 @@
             var iTemp = JsonConvert.DeserializeObject<Item[]>(File.ReadAllText(name));
             foreach (var it in iTemp)
                 itemsList.Add(it.Id, it);
+
+            name = Path.Combine(path, "places.json");
+            var kTemp = JsonConvert.DeserializeObject<Kingdom[]>(File.ReadAllText(name));
+            foreach (var k in kTemp)
+                kingdomsList.Add(k.Name, k);
         }
+
+        public static IEnumerable<Kingdom> GetKingdoms() => kingdomsList.Values;
 
         public static IEnumerable<Item> GetItems() => itemsList.Values;
 

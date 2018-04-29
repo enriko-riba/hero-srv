@@ -15,9 +15,10 @@
         public GameServer(ILogger<GameServer> logger) : base(logger){}
 
         private const int SYNC_MILLISECONDS = 15000;
-        //private static readonly GameServer singleton = new GameServer();
-        // public static GameServer Instance { get => singleton; }
 
+        /// <summary>
+        /// Temp var reused every OnProcessState()
+        /// </summary>
         private List<int> finishedBuidlings = new List<int>(10);
 
         protected override bool ShouldSync(long tickStart, long lastStateSync) => (tickStart - lastStateSync > SYNC_MILLISECONDS);
@@ -34,11 +35,10 @@
             //------------------------------------
             //  handle buildings
             //------------------------------------
-            Building b;
             finishedBuidlings.Clear();
             for (int i = 0; i < city.buildings.Length; i++)
             {
-                b = city.buildings[i];
+                var b = city.buildings[i];
                 if (b != null && b.BuildTimeLeft > 0)
                 {
                     b.BuildTimeLeft -= ellapsedMilliseconds;
@@ -59,8 +59,7 @@
             {
                 foreach (var i in finishedBuidlings)
                 {
-                    b = city.buildings[i];
-                    b.Level++;
+                    city.buildings[i].Level++;
                 }
                 city.RecalculateProduction();
                 user.LastSync = DateTime.MinValue;  //  this forces sync message dispatch to the user
@@ -106,6 +105,7 @@
                     r = ProcessStartBuildingDestroy(user.GameData, ref msg);
                     user.LastSync = DateTime.MinValue;  //  this forces sync message dispatch to the user
                     break;
+
                 default:
                     break;
             }
@@ -132,6 +132,10 @@
             };
         }
 
+        protected override void OnServerStart()
+        {
+            var kingdoms = DataFactory.GetKingdoms();
+        }
         #region Actions
 
         private Response ProcessStartBuildingDestroy(PlayerData pd, ref RpgMessage msg)
@@ -358,9 +362,10 @@
             var o = new
             {
                 BuildingData = DataFactory.GetBuildings(),
-                ItemData = DataFactory.GetItems()
+                ItemData = DataFactory.GetItems(),
+                KingdomsData = DataFactory.GetKingdoms()
             };
-            var data = Newtonsoft.Json.JsonConvert.SerializeObject(o);
+            var data = JsonConvert.SerializeObject(o);
             Response r = new Response()
             {
                 Tick = this.tick,

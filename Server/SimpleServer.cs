@@ -57,6 +57,7 @@ namespace ws_hero.Server
 
             SwapBuffers();
             IsRunning = true;
+            OnServerStart();
             mainLoopTask = Task.Run((Action)MainLoop);
             logger.LogWarning("server started!");
         }
@@ -166,6 +167,8 @@ namespace ws_hero.Server
         protected abstract void OnUserLoaded(User<T> user);
 
         protected abstract void OnNewUserAdded(User<T> user);
+
+        protected abstract void OnServerStart();
 
         /// <summary>
         /// Processes time based game state.
