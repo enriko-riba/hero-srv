@@ -8,6 +8,9 @@ namespace ws_hero.GameLogic
 {
     public class Kingdom
     {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
         [JsonProperty("name")]
         public string Name { get; set; }
 
@@ -17,6 +20,9 @@ namespace ws_hero.GameLogic
 
     public class Place
     {
+        [JsonProperty("id")]
+        public int Id { get; set; }
+
         [JsonProperty("name")]
         public string Name { get; set; }
 

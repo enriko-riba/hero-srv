@@ -1,24 +1,30 @@
 ﻿[
   {
+    "id":  1,
     "name": "Kavalia",
     "places": [
       {
+        "id": 1000,
         "name": "Darwick",
         "kind": "Capital"
       },
       {
+        "id": 1001,
         "name": "The Sanctum of Kaval",
         "kind": "Temple"
       },
       {
+        "id": 1002,
         "name": "Minas Seare",
         "kind": "Castle"
       },
       {
+        "id": 1003,
         "name": "Loft",
         "kind": "Village"
       },
       {
+        "id": 1004,
         "name": "Snakefen River Pass",
         "kind": "Ferry"
       }

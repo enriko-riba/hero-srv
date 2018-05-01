@@ -115,6 +115,17 @@
         protected override void OnUserLoaded(User<PlayerData> user)
         {
             user.GameData.City.RecalculateProduction();
+
+            //  TODO: remove - this is for patching old data
+            if (user.GameData.KingdomId == 0)
+                user.GameData.KingdomId = 1;
+            if (user.GameData.CurrentPlaceId == 0)
+                user.GameData.CurrentPlaceId = 1003;
+            if (user.GameData.gold == 0)
+                user.GameData.gold = 50;
+            if (user.GameData.coins == 0)
+                user.GameData.coins = 500;
+
         }
 
         protected override void OnNewUserAdded(User<PlayerData> user)
