@@ -192,23 +192,23 @@
             var cmdData = msg.Data.Split("|");
             if (!int.TryParse(cmdData[0], out int slot))
             {
-                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: invalid slot index");
+                return CreateErrorResponse(ref msg, "Can't upgrade: invalid slot index");
             }
             if (!int.TryParse(cmdData[1], out int buildingId))
             {
-                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: invalid building id");
+                return CreateErrorResponse(ref msg, "Can't upgrade: invalid building id");
             }
             if (pd.City.buildings[slot] == null)
             {
-                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: slot is empty");
+                return CreateErrorResponse(ref msg, "Can't upgrade: slot is empty");
             }
             if (pd.City.buildings[slot].Id != buildingId)
             {
-                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: building id mismatch");
+                return CreateErrorResponse(ref msg, "Can't upgrade: building id mismatch");
             }
             if (pd.City.buildings[slot].BuildTimeLeft > 0)
             {
-                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: already upgrading");
+                return CreateErrorResponse(ref msg, "Can't upgrade:: already upgrading");
             }
             // check resources
             var building = pd.City.buildings[slot];
@@ -217,7 +217,7 @@
                        building.UpgradeCost.stone <= pd.City.resources.stone;
             if (!isOk)
             {
-                return CreateErrorResponse(ref msg, "StartBuildingUpgrade: no resources");
+                return CreateErrorResponse(ref msg, "Can't upgrade: no resources");
             }
             else
             {
@@ -225,7 +225,7 @@
                 //  check builders
                 //---------------------------
                 if (!UseBuilder(pd, building, slot))
-                    return CreateErrorResponse(ref msg, "StartBuildingUpgrade: no builder");
+                    return CreateErrorResponse(ref msg, "Can't upgrade: no builder");
             }
 
             pd.City.resources -= building.UpgradeCost;
@@ -245,15 +245,15 @@
             var cmdData = msg.Data.Split("|");
             if (!int.TryParse(cmdData[0], out int slot))
             {
-                return CreateErrorResponse(ref msg, "StartBuilding: Invalid slot");
+                return CreateErrorResponse(ref msg, "Can't build: Invalid slot");
             }
             if (!int.TryParse(cmdData[1], out int buildingId))
             {
-                return CreateErrorResponse(ref msg, "StartBuilding: Invalid building id");
+                return CreateErrorResponse(ref msg, "Can't build: Invalid building id");
             }
             if (pd.City.buildings[slot] != null)
             {
-                return CreateErrorResponse(ref msg, "StartBuilding: slot not empty");
+                return CreateErrorResponse(ref msg, "Can't build: slot not empty");
             }
 
             //---------------------------
@@ -267,7 +267,7 @@
             
             if (!isOk)
             {
-                return CreateErrorResponse(ref msg, "StartBuilding: no resources");
+                return CreateErrorResponse(ref msg, "Can't build: no resources");
             }
             else
             {
@@ -275,7 +275,7 @@
                 //  check builders
                 //---------------------------
                 if(!UseBuilder(pd, building, slot))
-                    return CreateErrorResponse(ref msg, "StartBuilding: no builder");
+                    return CreateErrorResponse(ref msg, "Can't build: no builder");
             }
 
             pd.City.resources -= building.UpgradeCost;
