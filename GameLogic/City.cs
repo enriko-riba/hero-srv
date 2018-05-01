@@ -39,7 +39,7 @@
             production.stone = baseStone;
             foreach (var b in buildings)
             {
-                if (b != null && b.Level > 0 && b.BuildTimeLeft <= 0)
+                if (b != null && b.Level > 0)
                 {
                     production.food += b.Production.food * b.Level;
                     production.wood += b.Production.wood * b.Level;
